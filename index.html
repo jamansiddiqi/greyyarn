@@ -150,37 +150,39 @@ table.grid tfoot td{background:#edf2f7;font-weight:700;border:1px solid var(--li
 #main .tab{padding:4px 14px;font-size:12px;border:1px solid var(--line);border-bottom:none;border-radius:5px 5px 0 0;background:#e9eef5;color:var(--muted)}
 #main .tab.on{background:#fff;color:var(--navy);font-weight:600}
 /* ---------- Dashboard ---------- */
-.dash{--s1:#2a78d6;--s2:#eb6834;max-width:1500px}
-.dHead{display:flex;align-items:flex-end;justify-content:space-between;margin:2px 2px 10px}
-.dTitle{font-size:20px;font-weight:800;color:var(--navy)}
-.dSub{font-size:11.5px;color:var(--muted);margin-top:2px}
-.dTiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:10px}
-.dTile{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
-.dLbl{font-size:11.5px;color:var(--muted);font-weight:600}
-.dVal{font-size:19px;font-weight:800;color:var(--txt);margin:3px 0 1px;white-space:nowrap}
+.dash{--s1:#2a78d6;--s2:#eb6834;max-width:1500px;font-size:11.5px}
+.dHead{display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px}
+.dSel{display:flex;gap:4px}
+.dSel select{font-size:11px;padding:1px 4px;height:22px;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--txt)}
+.dTitle{font-size:15px;font-weight:800;color:var(--navy)}
+.dSub{font-size:10.5px;color:var(--muted);margin-top:1px}
+.dTiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:6px;margin-bottom:6px}
+.dTile{background:#fff;border:1px solid var(--line);border-radius:6px;padding:6px 9px}
+.dLbl{font-size:10.5px;color:var(--muted);font-weight:600}
+.dVal{font-size:15px;font-weight:800;color:var(--txt);margin:1px 0 0;white-space:nowrap}
 .okc{color:#2f855a}.badc{color:#c53030}
-.dGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.dCard{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-width:0}
+.dGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.dCard{background:#fff;border:1px solid var(--line);border-radius:6px;padding:7px 10px;min-width:0}
 .dCard.wide{grid-column:span 2}
-.dCT{font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:8px}
-.dLeg{font-size:11.5px;color:var(--muted);display:flex;gap:6px;align-items:center;margin:-4px 0 4px}
+.dCT{font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:5px}
+.dLeg{font-size:10.5px;color:var(--muted);display:flex;gap:5px;align-items:center;margin:-3px 0 2px}
 .dLeg i{width:10px;height:10px;border-radius:2px;display:inline-block;margin-left:8px}
 .dSvg{width:100%;height:auto;display:block}
 .dSvg .ax{font-size:10.5px;fill:#5a6b80}
 .dSvg path:hover{opacity:.8}
-.hb{display:flex;flex-direction:column;gap:6px}
-.hbR{display:grid;grid-template-columns:42% 1fr 62px;gap:8px;align-items:center;font-size:12px}
+.hb{display:flex;flex-direction:column;gap:3px}
+.hbR{display:grid;grid-template-columns:42% 1fr 52px;gap:6px;align-items:center;font-size:11px}
 .hbL{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hbT{height:12px;background:#eef2f7;border-radius:3px;overflow:hidden}
+.hbT{height:9px;background:#eef2f7;border-radius:3px;overflow:hidden}
 .hbT span{display:block;height:100%;background:var(--s1);border-radius:0 4px 4px 0}
 .hbV{text-align:right;font-weight:700}
-.dT{width:100%;border-collapse:collapse;font-size:12px}
-.dT th{text-align:left;color:var(--muted);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line)}
-.dT td{padding:5px 6px;border-bottom:1px solid #eef2f7;white-space:nowrap}
+.dT{width:100%;border-collapse:collapse;font-size:11px}
+.dT th{text-align:left;color:var(--muted);font-weight:600;padding:2px 5px;border-bottom:1px solid var(--line)}
+.dT td{padding:2px 5px;border-bottom:1px solid #eef2f7;white-space:nowrap}
 .dT td .tag{white-space:nowrap}
 .dT .num{text-align:right}
 .dLink{cursor:pointer}.dLink:hover{background:#f4f8fd}
-.dPb{height:10px;background:#eef2f7;border-radius:3px;overflow:hidden}
+.dPb{height:8px;background:#eef2f7;border-radius:3px;overflow:hidden}
 .dPb span{display:block;height:100%;background:var(--s3,#1baf7a);border-radius:0 4px 4px 0}
 .dEmpty{color:var(--muted);font-size:12px;padding:20px;text-align:center}
 #dtip{position:fixed;display:none;background:#1a202c;color:#fff;font-size:12px;padding:5px 9px;border-radius:5px;pointer-events:none;z-index:300;white-space:nowrap}
@@ -928,12 +930,18 @@ const PAGES={ consump:renderConsumption, settingDb:renderSettingDb, dashboard:re
 /* =========================================================
    DASHBOARD — overview of every register (opens first)
    ========================================================= */
+// Year / Month selection (default: running year and month)
+const DASH={year:String(new Date().getFullYear()), month:String(new Date().getMonth()+1).padStart(2,'0')};
 function renderDashboard(){
   const main=document.getElementById('main');
-  const yr=String(new Date().getFullYear());
+  const yr=DASH.year, mo=DASH.month;
+  const inP=d=>{ d=String(d||''); return d.slice(0,4)===yr && (mo==='all' || d.slice(5,7)===mo); };   // in the selected period
+  const pLbl=mo==='all'?yr:`${MON[+mo-1]} ${yr}`;
+  const yrs=[...new Set([String(new Date().getFullYear()),...[...(DB.issues||[]).map(r=>r.issueDate),...(DB.challans||[]).map(r=>r.challanDate),...(DB.lcReceipts||[]).map(r=>r.rcvDate)].map(d=>String(d||'').slice(0,4)).filter(y=>/^\d{4}$/.test(y))])].sort();
   const n2=v=>fmtNum(v,2), n0=v=>fmtNum(v,0), sum=(a,f)=>a.reduce((s,x)=>s+(+f(x)||0),0);
   const stock=stockRows();
-  const recv=sum(stock,r=>r.qty), iss=sum(DB.issues||[],r=>r.issueQty), back=sum(DB.yarnBacks||[],r=>r.backQty);
+  const pStock=stock.filter(r=>inP(r.rDate)), pIss=(DB.issues||[]).filter(r=>inP(r.issueDate)), pBack=(DB.yarnBacks||[]).filter(r=>inP(r.backDate));
+  const recv=sum(pStock,r=>r.qty), iss=sum(pIss,r=>r.issueQty), back=sum(pBack,r=>r.backQty);
   const close=sum(stock,r=>r.closeStock), value=sum(stock,r=>r.closeStock*(+r.unitPrice||0));
   const lotsIn=stock.filter(r=>r.closeStock>0).length;
   const pipeBal=sum(DB.pipeline||[],r=>(+r.qty||0)-piReceived(r));
@@ -947,7 +955,7 @@ function renderDashboard(){
   (DB.issues||[]).forEach(r=>{ const d=String(r.issueDate||''); if(d.slice(0,4)===yr) mI[+d.slice(5,7)-1]+=(+r.issueQty||0); });
   // issue by Issue To
   const TO=['Singing','TFO','Out Dyeing','Soft Winding','Others'];
-  const byTo=TO.map(t=>[t,sum((DB.issues||[]).filter(i=>i.issuedTo===t),i=>i.issueQty)]);
+  const byTo=TO.map(t=>[t,sum(pIss.filter(i=>i.issuedTo===t),i=>i.issueQty)]);
   // top closing stock by Count & Type
   const byItem={}; stock.forEach(r=>{ if(r.closeStock>0){ const k=r.item||'-'; byItem[k]=(byItem[k]||0)+r.closeStock; } });
   const topStock=Object.entries(byItem).sort((a,b)=>b[1]-a[1]).slice(0,8);
@@ -967,12 +975,14 @@ function renderDashboard(){
   act.sort((a,b)=>String(b.t).localeCompare(String(a.t)));
 
   main.innerHTML=`<div class="dash">
-   <div class="dHead"><div><div class="dTitle">Dashboard</div><div class="dSub">YD Yarn Store · all registers · ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div></div></div>
+   <div class="dHead"><div><div class="dTitle">Dashboard</div><div class="dSub">YD Yarn Store · all registers</div></div>
+     <div class="dSel"><select id="dYear">${yrs.map(y=>`<option ${y===yr?'selected':''}>${y}</option>`).join('')}</select>
+       <select id="dMonth"><option value="all" ${mo==='all'?'selected':''}>All months</option>${MON.map((m,i)=>{const v=String(i+1).padStart(2,'0');return `<option value="${v}" ${v===mo?'selected':''}>${m}</option>`;}).join('')}</select></div></div>
    <div class="dTiles">
-     ${tile('Total Received','<span>'+n0(recv)+'</span> Kg',`${stock.length} lots received`)}
-     ${tile('Total Issued',n0(iss)+' Kg',`${(DB.issues||[]).length} issues`)}
-     ${tile('Yarn Back',n0(back)+' Kg',`${(DB.yarnBacks||[]).length} returns to stock`)}
-     ${tile('Closing Stock',n0(close)+' Kg',`${lotsIn} lots in stock`)}
+     ${tile('Received · '+pLbl,n0(recv)+' Kg',`${pStock.length} lots`)}
+     ${tile('Issued · '+pLbl,n0(iss)+' Kg',`${pIss.length} issues`)}
+     ${tile('Yarn Back · '+pLbl,n0(back)+' Kg',`${pBack.length} returns`)}
+     ${tile('Closing Stock · now',n0(close)+' Kg',`${lotsIn} lots in stock`)}
      ${tile('Stock Value','$ '+n0(value),'closing stock × unit price')}
      ${tile('Pipeline Balance',n0(pipeBal)+' Kg',`${(DB.pipeline||[]).length} PI lines`)}
      ${tile('Order Pending',n0(ordQty-ordIss)+' Kg',`of ${n0(ordQty)} Kg ordered`)}
@@ -981,7 +991,7 @@ function renderDashboard(){
    <div class="dGrid">
      <div class="dCard wide"><div class="dCT">Monthly Receive vs Issue — ${yr} (Kg)</div>
        <div class="dLeg"><i style="background:var(--s1)"></i>Received <i style="background:var(--s2)"></i>Issued</div>${barsMonthly(mR,mI)}</div>
-     <div class="dCard"><div class="dCT">Issue by Issue To (Kg)</div>${hbars(byTo,'issue')}</div>
+     <div class="dCard"><div class="dCT">Issue by Issue To — ${pLbl} (Kg)</div>${hbars(byTo,'issue')}</div>
      <div class="dCard"><div class="dCT">Top Closing Stock by Count &amp; Type (Kg)</div>${topStock.length?hbars(topStock,'stock'):'<div class="dEmpty">No stock</div>'}</div>
      <div class="dCard"><div class="dCT">Outside Process — Issued / Back / Pending (Kg)</div>
        <table class="dT"><tr><th>Process</th><th class="num">Issued</th><th class="num">Back</th><th class="num">Pending</th><th style="width:34%"></th></tr>
@@ -1001,10 +1011,12 @@ function renderDashboard(){
     el.addEventListener('mouseleave',()=>tip.style.display='none');
   });
   main.querySelectorAll('[data-go]').forEach(el=>el.onclick=()=>showMenu(el.dataset.go));
+  document.getElementById('dYear').onchange=e=>{DASH.year=e.target.value;renderDashboard();};
+  document.getElementById('dMonth').onchange=e=>{DASH.month=e.target.value;renderDashboard();};
 }
 // grouped monthly bars (two series, one axis)
 function barsMonthly(a,b){
-  const W=720,H=230,L=46,B=26,T=10, max=Math.max(1,...a,...b), step=niceStep(max), top=Math.ceil(max/step)*step;
+  const W=720,H=165,L=44,B=20,T=8, max=Math.max(1,...a,...b), step=niceStep(max), top=Math.ceil(max/step)*step;
   const y=v=>T+(H-T-B)*(1-v/top), gw=(W-L-8)/12, bw=Math.min(18,(gw-10)/2);
   let g='';
   for(let v=0;v<=top+1e-9;v+=step) g+=`<line x1="${L}" x2="${W-4}" y1="${y(v)}" y2="${y(v)}" stroke="#e6ebf2"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" class="ax">${fmtNum(v,0)}</text>`;
@@ -1014,7 +1026,9 @@ function barsMonthly(a,b){
       if(v>0){ const h=y(0)-y(v); g+=`<path d="${roundTop(x+dx,y(v),bw,h)}" fill="${c}" data-tip="${m} — ${n}: ${fmtNum(v,2)} Kg"/>`; }
       g+=`<rect x="${x+dx}" y="${T}" width="${bw}" height="${H-T-B}" fill="transparent" data-tip="${m} — ${n}: ${fmtNum(v,2)} Kg"/>`;
     });
-    g+=`<text x="${x}" y="${H-8}" text-anchor="middle" class="ax">${m}</text>`;
+    const on=DASH.month!=='all'&&+DASH.month===i+1;
+    if(on) g=`<rect x="${L+i*gw+2}" y="${T}" width="${gw-4}" height="${H-T-B}" fill="#eef4fc" rx="4"/>`+g;
+    g+=`<text x="${x}" y="${H-6}" text-anchor="middle" class="ax" ${on?'style="font-weight:700;fill:#1f3a5f"':''}>${m}</text>`;
   });
   return `<svg viewBox="0 0 ${W} ${H}" class="dSvg">${g}<line x1="${L}" x2="${W-4}" y1="${y(0)}" y2="${y(0)}" stroke="#b8c4d4"/></svg>`;
 }
