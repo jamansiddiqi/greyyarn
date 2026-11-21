@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YD Yarn Store ERP</title>
+<style>
+:root{
+  --navy:#1f3a5f; --navy2:#2c5282; --bg:#eef2f7; --line:#cfd8e3; --txt:#1a202c;
+  --muted:#5a6b80; --ok:#2f855a; --warn:#c05621; --err:#c53030; --sel:#fff3c4; --head:#dce6f2;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Tahoma,Arial,sans-serif;font-size:13px;color:var(--txt);background:var(--bg)}
+button{font:inherit;cursor:pointer}
+input,select,textarea{font:inherit}
+
+/* ---------- Connection screen ---------- */
+#connectScreen{position:fixed;inset:0;background:linear-gradient(135deg,#1f3a5f,#2c5282);display:flex;align-items:center;justify-content:center;z-index:100}
+.conBox{background:#fff;border-radius:10px;padding:28px 32px;width:440px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.conBox h1{margin:0 0 4px;font-size:20px;color:var(--navy)}
+.conBox .sub{color:var(--muted);margin-bottom:18px}
+.conBox button{display:block;width:100%;padding:10px;margin:8px 0;border-radius:6px;border:1px solid var(--navy2);background:#fff;color:var(--navy2);font-weight:600}
+.conBox button.primary{background:var(--navy2);color:#fff}
+.conBox button:hover{filter:brightness(.95)}
+.conBox .note{font-size:11.5px;color:var(--muted);margin-top:12px;line-height:1.5}
+#conMsg{color:var(--err);font-size:12px;min-height:16px;margin-top:6px}
+
+/* ---------- Layout ---------- */
+#app{display:none;height:100vh;flex-direction:column}
+header.top{background:var(--navy);color:#fff;display:flex;align-items:center;padding:0 14px;height:46px;gap:14px}
+header.top .brand{font-weight:700;font-size:15px}
+header.top .brand small{font-weight:400;opacity:.75;margin-left:6px}
+header.top .spacer{flex:1}
+.dbStatus{font-size:12px;background:rgba(255,255,255,.12);padding:4px 10px;border-radius:12px}
+.dbStatus .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#68d391;margin-right:6px}
+.dbStatus.dirty .dot{background:#f6ad55}
+header.top button{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:4px;padding:4px 10px}
+.body{flex:1;display:flex;min-height:0}
+nav.side{width:158px;flex-shrink:0;background:#fff;border-right:1px solid var(--line);overflow:auto;padding:4px 0}
+nav.side{display:flex;flex-direction:column}
+nav.side .credit{margin-top:auto;padding:10px 10px 8px;border-top:1px solid var(--line);font-size:10.5px;color:var(--muted);line-height:1.5;text-align:center}
+nav.side .credit b{color:var(--navy);font-size:11.5px}
+nav.side .grp{font-size:10px;text-transform:uppercase;color:var(--muted);padding:5px 10px 3px;letter-spacing:.4px}
+nav.side a{display:flex;align-items:center;gap:6px;padding:4px 8px;font-size:11.5px;white-space:nowrap;color:var(--txt);text-decoration:none;border-left:3px solid transparent}
+nav.side a .n{width:16px;height:16px;flex-shrink:0;border-radius:50%;background:#e2e8f0;font-size:9.5px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+nav.side a:hover{background:#f4f7fb}
+nav.side a.active{background:#e8f0fb;border-left-color:var(--navy2);font-weight:600;color:var(--navy2)}
+nav.side a.active .n{background:var(--navy2);color:#fff}
+nav.side a.soon{color:#8a97a8}
+main{flex:1;overflow:auto;padding:12px 14px}
+.pageTitle{font-size:16px;font-weight:700;color:var(--navy);margin:0 0 10px}
+
+/* ---------- Panels ---------- */
+.panel{background:#fff;border:1px solid var(--line);border-radius:6px;margin-bottom:10px}
+.panel .ph{padding:7px 12px;border-bottom:1px solid var(--line);background:#f7f9fc;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.panel .ph .arrow{transition:transform .15s}
+.panel.collapsed .ph .arrow{transform:rotate(-90deg)}
+.panel.collapsed .pb{display:none}
+.panel .pb{padding:10px 12px}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 10px}
+.sgrid label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:2px}
+.sgrid input,.sgrid select{width:100%;padding:5px 7px;border:1px solid var(--line);border-radius:4px;background:#fff}
+.sgrid .range{display:flex;gap:4px}
+.sgrid .range input{min-width:0}
+.sActions{display:flex;gap:8px;margin-top:10px;align-items:center}
+.btn{padding:6px 14px;border-radius:4px;border:1px solid var(--line);background:#fff;color:var(--txt)}
+.btn:hover{background:#f1f5f9}
+.btn.blue{background:var(--navy2);border-color:var(--navy2);color:#fff}
+.btn.green{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.orange{background:var(--warn);border-color:var(--warn);color:#fff}
+.btn.red{background:var(--err);border-color:var(--err);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.blue:hover,.btn.green:hover,.btn.orange:hover,.btn.red:hover{filter:brightness(1.08)}
+
+.toolbar{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.toolbar .spacer{flex:1}
+.toolbar .info{color:var(--muted);font-size:12px}
+.quick{padding:5px 8px;border:1px solid var(--line);border-radius:4px;width:220px}
+
+/* ---------- Table ---------- */
+.tblWrap{overflow:auto;max-height:calc(100vh - 330px)}
+table.grid{border-collapse:collapse;width:100%;white-space:nowrap}
+table.grid th{position:sticky;top:0;background:var(--head);color:var(--navy);font-weight:600;text-align:center;padding:6px 8px;border:1px solid var(--line);cursor:pointer;z-index:1}
+table.grid td.num{text-align:right}
+table.grid th .sort{font-size:10px;opacity:.6;margin-left:3px}
+table.grid td{padding:5px 8px;border:1px solid #e3e9f1}
+table.grid tbody tr:nth-child(even){background:#fafcfe}
+table.grid tbody tr:hover{background:#eef5ff}
+table.grid tbody tr.sel{background:var(--sel)}
+table.grid tfoot td{background:#edf2f7;font-weight:700;border:1px solid var(--line);position:sticky;bottom:0}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+.tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;background:#e2e8f0}
+.tag.Import{background:#e9d8fd;color:#553c9a}
+.tag.Local{background:#c6f6d5;color:#22543d}
+
+/* ---------- Modal ---------- */
+.modalBg{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:50}
+.modalBg.show{display:flex}
+.modal{background:#fff;border-radius:8px;width:760px;max-width:95vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.modal .mh{padding:10px 16px;background:var(--navy);color:#fff;border-radius:8px 8px 0 0;font-weight:600;display:flex;justify-content:space-between}
+.modal .mh span.x{cursor:pointer;opacity:.8}
+.modal .mb{padding:14px 16px;overflow:auto}
+.modal .mf{padding:10px 16px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px}
+.fgrid .full{grid-column:1/-1}
+.fgrid label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+.fgrid label b{color:var(--err)}
+.fgrid input,.fgrid select,.fgrid textarea{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:#fff}
+.fgrid input:focus,.fgrid select:focus,.fgrid textarea:focus{outline:2px solid #bee3f8;border-color:var(--navy2)}
+.fgrid .err{border-color:var(--err)!important;background:#fff5f5}
+
+.soonBox{background:#fff;border:1px dashed var(--line);border-radius:8px;padding:50px;text-align:center;color:var(--muted)}
+.soonBox h2{color:var(--navy);margin:0 0 6px}
+
+
+/* ---------- Compact Challan Register ---------- */
+#main .pageTitle{font-size:14px;margin:0 0 6px}
+#main .panel{margin-bottom:6px}
+#main .toolbar{gap:4px;padding:5px 8px}
+#main .btn{padding:3px 9px;font-size:11.5px;border-radius:3px;line-height:1.4}
+#main .quick{padding:3px 7px;font-size:11.5px;width:210px!important;height:24px;border-radius:3px}
+#main .toolbar .info{font-size:11px}
+#main #filterInfo{padding:3px 8px!important;font-size:11px!important}
+#main table.grid{font-size:11.5px}
+#main table.grid th{padding:4px 6px}
+#main table.grid td{padding:2px 6px}
+#main table.grid tfoot td{padding:3px 6px}
+#main.chPage{display:flex;flex-direction:column;overflow:hidden}
+#main.chPage .panel.gridPanel{flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:0}
+#main.chPage .tblWrap{flex:1;min-height:0;max-height:none}
+#main table.grid{table-layout:fixed;height:100%;min-width:100%}
+#main table.grid td,#main table.grid th{overflow:hidden;text-overflow:ellipsis}
+#main table.grid tr.dr td{height:20px}
+#main table.grid tr.dr{height:1px}
+#main table.grid tr.filler td{height:auto;border:none;background:#fff}
+#main table.grid tr.filler:hover{background:none}
+#main table.grid .fill{border-left:none;border-right:none;background:transparent}
+#main table.grid thead th.fill{background:var(--head)}
+#main table.grid tfoot td.fill{background:#edf2f7}
+#main table.grid th{position:sticky;top:0;cursor:grab;user-select:none}
+#main table.grid th.sl{cursor:default}
+#main table.grid th .rz{position:absolute;top:0;right:-3px;width:7px;height:100%;cursor:col-resize;z-index:3}
+#main table.grid th .rz:hover{background:rgba(44,82,130,.35)}
+#main table.grid th.dragging{opacity:.4}
+#main table.grid th.dropL{box-shadow:inset 3px 0 0 var(--navy2)}
+#main table.grid th.dropR{box-shadow:inset -3px 0 0 var(--navy2)}
+#main table.grid tfoot td{position:sticky;bottom:0;z-index:1}
+#main table.grid thead th.tcol{background:#d9f2e3;color:#22543d}
+#main .tabBar{display:flex;gap:2px;margin-bottom:-1px;position:relative;z-index:2}
+#main .tab{padding:4px 14px;font-size:12px;border:1px solid var(--line);border-bottom:none;border-radius:5px 5px 0 0;background:#e9eef5;color:var(--muted)}
+#main .tab.on{background:#fff;color:var(--navy);font-weight:600}
+body.resizing,body.resizing *{cursor:col-resize!important;user-select:none!important}
+#main .tag{padding:0 6px;font-size:10.5px;line-height:16px}
+
+table.vt{border-collapse:collapse;width:100%;font-size:12px}
+table.vt th,table.vt td{border:1px solid var(--line);padding:4px 8px}
+table.vt th{background:#d9f2e3;color:#22543d;text-align:center}
+table.vt td.num{text-align:right}
+table.lotT tbody tr{cursor:pointer}
+table.lotT tbody tr:hover,table.lotT tbody tr:focus{background:#fff3c4;outline:none}
+table.vert td:not(:first-child){text-align:center!important}
+table.vt tbody tr:nth-child(even){background:#fafcfe}
+#toast{position:fixed;bottom:18px;right:18px;background:#2d3748;color:#fff;padding:9px 16px;border-radius:6px;opacity:0;transition:opacity .2s;z-index:200;pointer-events:none}
+#toast.show{opacity:.95}
+
+/* ---------- Print ---------- */
+#printArea{display:none}
+@media print{
+  @page{size:A4 landscape;margin:10mm}
+  body{background:#fff}
+  #app,#connectScreen,.modalBg,#toast{display:none!important}
+  #printArea{display:block;font-size:10.5px;color:#000}
+  .pHead{text-align:center;margin-bottom:6px}
+  .pHead h1{margin:0;font-size:17px}
+  .pHead h2{margin:2px 0;font-size:13px;font-weight:600}
+  .pHead h3{margin:4px 0 0;font-size:13px;text-decoration:underline}
+  .pMeta{display:flex;justify-content:space-between;font-size:10px;margin:6px 0}
+  .pFilter{font-size:10px;margin-bottom:6px;border:1px solid #999;padding:4px 6px}
+  table.pt{border-collapse:collapse;width:100%}
+  table.pt th,table.pt td{border:1px solid #555;padding:3px 4px}
+  table.pt th{background:#e5e5e5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  table.pt td.num,table.pt th.num{text-align:right}
+  table.pt.vert td:not(:first-child){text-align:center!important}
+  table.pt tfoot td{font-weight:700;background:#f0f0f0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  table.pt thead{display:table-header-group}
+  table.pt tr{page-break-inside:avoid}
+  .sign{display:flex;justify-content:space-between;margin-top:45px;font-size:11px}
+  .sign div{border-top:1px solid #000;width:22%;text-align:center;padding-top:3px}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= CONNECTION SCREEN ================= -->
+<div id="connectScreen">
+  <div class="conBox">
+    <h1>YD Yarn Store ERP</h1>
+    <div class="sub">Akij Textile Mills Ltd. — Yarn Dyeing Unit</div>
+    <div style="font-weight:600;margin-bottom:4px">Database Connection</div>
+    <button class="primary" id="btnReconnect" style="display:none">↻ Reconnect: <span id="lastDbName"></span></button>
+    <button class="primary" id="btnOpenDb">📂 Open Database (Yarn_Store_DB.json)</button>
+    <button id="btnNewDb">＋ Create New Database</button>
+    <div id="conMsg"></div>
+    <div class="note">
+      In Chrome / Edge, changes are <b>auto-saved directly</b> to the JSON file.<br>
+      In other browsers, "Save DB" downloads the updated JSON — open that file next time.
+    </div>
+  </div>
+</div>
+<input type="file" id="xlsxFile" accept=".xlsx" style="display:none">
+<input type="file" id="fallbackFile" accept=".json,application/json" style="display:none">
+
+<!-- ================= APP ================= -->
+<div id="app">
+  <header class="top">
+    <div class="brand">YD Yarn Store ERP <small>Yarn Dyeing Unit</small></div>
+    <div class="spacer"></div>
+    <div class="dbStatus" id="dbStatus" style="cursor:pointer" onclick="openSettings()" title="Connection info"><span class="dot"></span><span id="dbName">-</span> · <span id="dbState">Saved</span></div>
+    <div class="dbStatus" title="Database last update" style="cursor:pointer" onclick="openSettings()">🕒 Last Update: <b id="lastUpd">-</b></div>
+    <div style="position:relative">
+      <div class="dbStatus" id="userBtn" title="Click for Logout" style="cursor:pointer">👤 <b id="curUser">-</b> ▾</div>
+      <div id="userMenu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:60;min-width:140px;overflow:hidden">
+        <button id="btnLogout" style="display:block;width:100%;text-align:left;padding:9px 14px;border:none;background:#fff;color:var(--err);font-weight:700">⎋ Logout</button>
+      </div>
+    </div>
+    <button id="btnSettings" title="Setting" style="font-size:16px;padding:2px 10px">⚙</button>
+  </header>
+  <div class="body">
+    <nav class="side" id="sideNav"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+
+<!-- ================= ADD / EDIT MODAL (shared by all modules) ================= -->
+<div class="modalBg" id="recModal">
+  <div class="modal">
+    <div class="mh"><span id="mTitle">Add</span><span class="x" data-close>✕</span></div>
+    <div class="mb">
+      <form id="recForm" autocomplete="off"><div class="fgrid" id="formGrid"></div></form>
+      <div id="formMsg" style="color:var(--err);font-size:12px;margin-top:8px"></div>
+    </div>
+    <div class="mf">
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn green" id="btnSaveCont">Save &amp; Continue</button>
+      <button class="btn blue" id="btnSaveRec">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= LOT PICKER POPUP (Total Issue) ================= -->
+<div class="modalBg" id="lotModal" style="z-index:70">
+  <div class="modal" style="width:1100px">
+    <div class="mh"><span id="lotTitle">Lots in stock</span><span class="x" data-lclose>✕</span></div>
+    <div class="mb" id="lotBody"></div>
+    <div class="mf"><span style="margin-right:auto;font-size:12px;color:var(--muted)">Click a row (or ↑ ↓ + Enter) to select</span><button class="btn" data-lclose>Cancel</button></div>
+  </div>
+</div>
+
+<!-- ================= TEST VIEW MODAL ================= -->
+<div class="modalBg" id="viewModal">
+  <div class="modal" style="width:900px">
+    <div class="mh"><span id="viewTitle">Test View</span><span class="x" data-vclose>✕</span></div>
+    <div class="mb" id="viewBody"></div>
+    <div class="mf">
+      <button class="btn" data-vclose>Close</button>
+      <button class="btn blue" id="btnViewPrint">🖨 Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADVANCE SEARCH MODAL ================= -->
+<div class="modalBg" id="advModal">
+  <div class="modal" style="width:820px">
+    <div class="mh"><span id="advTitle">Advance Search</span><span class="x" data-aclose>✕</span></div>
+    <div class="mb"><div class="sgrid" id="advGrid"></div></div>
+    <div class="mf">
+      <button class="btn" id="btnAdvReset" style="margin-right:auto">Reset</button>
+      <button class="btn" data-aclose>Cancel</button>
+      <button class="btn blue" id="btnAdvSearch">🔍 Search</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= USER NAME MODAL ================= -->
+<div class="modalBg" id="userModal" style="z-index:150;background:linear-gradient(135deg,#1f3a5f,#2c5282)">
+  <div class="modal" style="width:360px">
+    <div class="mh"><span>👤 User Name</span></div>
+    <div class="mb">
+      <input id="userName" placeholder="Type your name only" autocomplete="off" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:4px;font-size:14px">
+      <div id="userMsg" style="color:var(--err);font-size:12px;min-height:16px;margin-top:5px"></div>
+    </div>
+    <div class="mf"><button class="btn blue" id="btnUserOk">Enter →</button></div>
+  </div>
+</div>
+
+<!-- ================= SETTINGS MODAL ================= -->
+<div class="modalBg" id="setModal">
+  <div class="modal" style="width:480px">
+    <div class="mh"><span>⚙ Settings</span><span class="x" data-sclose>✕</span></div>
+    <div class="mb">
+      <div style="font-weight:600;color:var(--navy);margin-bottom:6px">Database Connection Info</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px" id="connInfo"></table>
+      <div style="font-weight:600;color:var(--navy);margin:14px 0 6px">Database</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="btn blue" id="sSave">💾 Save DB</button>
+        <button class="btn" id="sBackup">⬇ Backup Download</button>
+        <button class="btn" id="sOpenOther">📂 Open Another DB</button>
+        <button class="btn red" id="sDisconnect">⏏ Disconnect</button>
+        <button class="btn" id="sChangeUser" style="grid-column:1/-1">👤 Change User</button>
+        <button class="btn" id="sResetCols" style="grid-column:1/-1">↺ Table Column Layout Reset (width + order)</button>
+      </div>
+    </div>
+    <div class="mf"><button class="btn" data-sclose>Close</button></div>
+  </div>
+</div>
+
+<!-- datalists -->
+<div id="datalists"></div>
+
+<div id="printArea"></div>
+<div id="toast"></div>
+
+<script>
+/* =========================================================
+   CONFIG
+   ========================================================= */
+const MENUS = [
+  {key:'challan',  name:'Challan Register'},
+  {key:'receive',  name:'Receive File'},
+  {key:'pipeline', name:'Pipeline'},
+  {key:'lc',       name:'LC-wise Receipt'},
+  {key:'consump',  name:'Monthly Consumption'},
+  {key:'order',    name:'Order Status'},
+  {key:'singing',  name:'Outside Singing'},
+  {key:'tfo',      name:'Outside TFO'},
+  {key:'odyeing',  name:'Outside Dyeing'},
+  {key:'issue',    name:'Total Issue'},
+  {key:'stock',    name:'Stock Report'}
+];
+
+/* Column/field definition:
+   k=key, t=table heading, label=form label (defaults to t), type: text|date|num|textarea,
+   req=required, list=dropdown (from previous entries), tag=coloured tag, autofit=auto width,
+   total=sum in footer, search: select|text|range|date, calc=calculated (not in form), w=default width */
+const ENTRY_COLS = [
+  {k:'entryBy', t:'Entry By', calc:true, search:'text', w:130},
+  {k:'editBy',  t:'Edit By',  calc:true, search:'text', w:130}
+];
+// Actual Yarn Name — searchable dropdown from Setting (form field)
+const AY_FIELD=()=>({k:'actualYarn', t:'Actual Yarn Name', listFrom:'yarnNames', search:'text', w:200,
+  check:v=>!v||(DB.yarnNames||[]).some(y=>normKey(y.name)===normKey(v))||'Actual Yarn Name must be chosen from the list (add new names in Setting).'});
+// registers whose rows carry an Actual Yarn Name
+const AY_DATA=['challans','lcReceipts','pipeline','orders'];
+const MODULES = {
+  challan:{
+    title:'Challan Register', noun:'Challan', data:'challans', seq:'challan', idPrefix:'CH-',
+    layoutKey:'ydYarnStore_chLayout_v1', file:'Challan_Register',
+    quick:['challanNo','productName'], quickPh:'Challan No / Count & Type',
+    dup:['challanNo','lotNo'], dateKey:'challanDate', defaults:{unit:'KG'},
+    keep:['stockType','yarnSource','challanDate','customerName','challanNo','exeNo','unit','location'], keepFocus:'productName',
+    cols:[
+      {k:'stockType',   t:'Stock Type', req:1, list:1, tag:1, autofit:1, search:'select', w:85},
+      {k:'yarnSource',  t:'Yarn Source', req:1, list:1, tag:1, autofit:1, search:'select', w:115},
+      {k:'challanDate', t:'Challan Date', type:'date', req:1, search:'date', w:90},
+      {k:'customerName',t:'Customer Name', req:1, list:1, search:'text', w:150},
+      {k:'value',       t:'Unit Price ($)', type:'num', dec:2, autofit:1, search:'range', w:90},
+      {k:'productName', t:'Count & Type', req:1, list:1, search:'text', w:160},
+      AY_FIELD(),
+      {k:'location',    t:'Location', list:1, search:'text', w:80},
+      {k:'lotNo',       t:'Lot No', list:1, search:'text', w:80},
+      {k:'challanNo',   t:'Challan No', req:1, search:'text', w:90},
+      {k:'exeNo',       t:'EXE No', list:1, search:'text', w:80},
+      {k:'unit',        t:'Unit', req:1, list:1, search:'select', w:50},
+      {k:'bag',         t:'Bag', type:'num', dec:0, total:1, search:'range', w:55},
+      {k:'challanQty',  t:'Qty. (Kg)', label:'Challan Qty (Kg)', type:'num', dec:2, req:1, total:1, search:'range', w:80},
+      {k:'totalValue',  t:'Total Value ($)', type:'num', dec:2, calc:true, total:1, search:'range', w:110},
+      {k:'remarks',     t:'Remarks', type:'textarea', search:'text', w:300},
+      ...ENTRY_COLS
+    ]
+  },
+  lc:{
+    title:'LC-wise Receipt', noun:'Receipt', data:'lcReceipts', seq:'lc', idPrefix:'LC-',
+    layoutKey:'ydYarnStore_lcLayout_v1', file:'LC_wise_Receipt',
+    quick:['challanNo','countType','lcNo'], quickPh:'Challan No / Count & Type / LC No',
+    dup:['challanNo','lotNo'], dateKey:'rcvDate', defaults:{},
+    keep:['stockType','rcvDate','supplierName','challanNo','poNo','invNo','lcNo','blNo','mrrNo','mrrDate','grnStatus'], keepFocus:'countType',
+    cols:[
+      {k:'stockType',   t:'Stock Type', req:1, list:1, tag:1, autofit:1, search:'select', w:85},
+      {k:'rcvDate',     t:'Date', type:'date', req:1, search:'date', w:90},
+      {k:'supplierName',t:'Supplier Name', req:1, list:1, search:'text', w:150},
+      {k:'unitPrice',   t:'Unit Price ($)', type:'num', dec:2, autofit:1, search:'range', w:90},
+      {k:'countType',   t:'Count & Type', req:1, list:1, search:'text', w:120},
+      AY_FIELD(),
+      {k:'lotNo',       t:'Lot', list:1, search:'text', w:80},
+      {k:'challanNo',   t:'Challan No', search:'text', w:90},
+      {k:'poNo',        t:'PO Number', list:1, search:'text', w:95},
+      {k:'invNo',       t:'C. Invoice No', list:1, search:'text', w:100},
+      {k:'invValue',    t:'C. Invoice Value', type:'num', dec:2, total:1, search:'range', w:110},
+      {k:'rcvQty',      t:'Received Qty (Kg)', type:'num', dec:2, req:1, total:1, search:'range', w:115},
+      {k:'lcNo',        t:'LC No', list:1, search:'text', w:110},
+      {k:'blNo',        t:'BL No', list:1, search:'text', w:95},
+      {k:'mrrNo',       t:'MRR No', search:'text', w:85},
+      {k:'mrrDate',     t:'MRR Date', type:'date', search:'date', w:90},
+      {k:'grnStatus',   t:'GRN Status', type:'select', options:['GRN OK'], tag:1, search:'select', w:95},
+      {k:'remarks',     t:'Remarks', type:'textarea', search:'text', w:300},
+      ...ENTRY_COLS,
+      // ---- Uster Test Report (entered via Test Report button, shown at the end of the table) ----
+      {k:'countNe',    t:'Count (Ne)', type:'num', dec:2, group:'test', search:'range', w:80},
+      {k:'countCV',    t:'Count CV%', type:'num', dec:2, group:'test', search:'range', w:80},
+      {k:'uPct',       t:'U%', type:'num', dec:2, group:'test', search:'range', w:60},
+      {k:'cvm',        t:'CVm%', type:'num', dec:2, group:'test', search:'range', w:65},
+      {k:'thin50',     t:'Thin -50%', type:'num', dec:0, group:'test', search:'range', w:75},
+      {k:'thick50',    t:'Thick +50%', type:'num', dec:0, group:'test', search:'range', w:88},
+      {k:'neps200',    t:'Neps +200%', type:'num', dec:0, group:'test', search:'range', w:95},
+      {k:'totalIPI',   t:'Total IPI', type:'num', dec:0, calc:true, test:true, search:'range', w:75},
+      {k:'hairiness',  t:'Hairiness (H)', type:'num', dec:2, group:'test', search:'range', w:95},
+      {k:'rkm',        t:'Strength (RKM)', type:'num', dec:2, group:'test', search:'range', w:105},
+      {k:'elong',      t:'Elongation %', type:'num', dec:2, group:'test', search:'range', w:95},
+      {k:'csp',        t:'CSP', type:'num', dec:0, group:'test', search:'range', w:60},
+      {k:'testResult', t:'Test Result', type:'select', options:['Pass','Fail'], tag:1, group:'test', search:'select', w:85},
+      {k:'testRemarks',t:'Test Remarks', type:'textarea', group:'test', search:'text', w:200},
+      {k:'testBy',     t:'Test By', calc:true, test:true, search:'text', w:130}
+    ],
+    testReport:true
+  }
+};
+
+/* Receive File — read-only combined view of everything received in
+   Challan Register (menu 1) and LC-wise Receipt (menu 4). No Add / Edit / Delete. */
+/* Setting — master list of Actual Yarn Names (used as a searchable dropdown in Challan Register) */
+const DEFAULT_YARN_NAMES=['20/1 KH','20/2 KH','20/1 CHC','20/2 CHC','30/1 KH','30/2 KH','30/1 CHC','30/2 CHC','32/1 KH','32/2 KH','32/1 CHC','32/2 CHC',
+  '40/1 KH','40/2 KH','40/1 CHC','40/2 CHC','60/1 CHC','60/2 CHC','30/1 Lenzing Ecovera Vortex Viscose','30/2 Lenzing Ecovera Vortex Viscose',
+  '30/1 100% Viscose Ring','30/2 100% Viscose Ring','30/2 Liva Eco Vortex Viscose','30/1 Vortex Viscose','30/2 Vortex Viscose',
+  '40D/2 100% Recycle Nylon','70D/1 100% Nylon','70D/1 100% Recycle Nylon','70D/2 100% Recycle Nylon'];
+/* Pipeline Received = LC-wise Receipt Received Qty where the PO No matches.
+   If several pipeline rows share one PO No, the Count & Type must match too (so a PO is not counted twice). */
+const normKey=v=>String(v??'').trim().toLowerCase();
+function piReceived(row){
+  const po=normKey(row.poNo); if(!po) return 0;
+  const shared=(DB.pipeline||[]).filter(r=>normKey(r.poNo)===po).length>1;
+  const sum=(DB.lcReceipts||[]).filter(r=>normKey(r.poNo)===po && (!shared || normKey(r.countType)===normKey(row.count)))
+    .reduce((s,r)=>s+(+r.rcvQty||0),0);
+  return Math.round(sum*100)/100;
+}
+/* Pipeline — yarn on order (PI / indent), with Received and Balance */
+MODULES.pipeline = {
+  title:'Pipeline', noun:'PI', data:'pipeline', seq:'pi', idPrefix:'PI-',
+  layoutKey:'ydYarnStore_pipelineLayout_v1', file:'Pipeline',
+  quick:['piNo','indentNo','supplierName','count'], quickPh:'PI / Indent / Supplier / Count & Type',
+  dup:['piNo','count'], dateKey:'indentDate', defaults:{},
+  keep:['piNo','indentNo','indentDate','supplierName','poNo'], keepFocus:'count',
+  cols:[
+    {k:'piNo',         t:'PI No', req:1, list:1, search:'text', w:120},
+    {k:'indentNo',     t:'Indent No', list:1, search:'text', w:100},
+    {k:'indentDate',   t:'Indent Date', type:'date', search:'date', w:90},
+    {k:'supplierName', t:'Supplier Name', req:1, list:1, search:'text', w:160},
+    {k:'price',        t:'Price ($)', type:'num', dec:2, autofit:1, search:'range', w:80},
+    {k:'count',        t:'Count & Type', req:1, list:1, search:'text', w:140},
+    AY_FIELD(),
+    {k:'qty',          t:'Qty (Kg)', type:'num', dec:2, req:1, total:1, search:'range', w:95},
+    {k:'received',     t:'Received (Kg)', type:'num', dec:2, calc:true, total:1, search:'range', w:105},
+    {k:'balance',      t:'Balance (Kg)', type:'num', dec:2, calc:true, total:1, search:'range', w:100},
+    {k:'poNo',         t:'PO No', list:1, search:'text', w:100},
+    {k:'remarks',      t:'Remarks', type:'textarea', search:'text', w:300},
+    ...ENTRY_COLS
+  ]
+};
+
+MODULES.setting = {
+  title:'Setting', noun:'Yarn Name', data:'yarnNames', seq:'yarnName', idPrefix:'YN-',
+  tabs:[['setting','Actual Yarn Name'],['settingDb','Database & System']],
+  layoutKey:'ydYarnStore_settingLayout_v1', file:'Actual_Yarn_Names', noLimit:true,
+  quick:['name'], quickPh:'Actual Yarn Name',
+  dup:['_none','_none'], dateKey:null, defaults:{}, keep:[], keepFocus:'name',
+  cols:[
+    {k:'name', t:'Actual Yarn Name', req:1, search:'text', w:300},
+    // rows with the same Report Group are shown together as one line in Monthly Consumption
+    {k:'group', t:'Monthly Report Group', list:1, search:'text', w:300},
+    ...ENTRY_COLS
+  ]
+};
+
+MODULES.receive = {
+  title:'Receive File', noun:'Receive', readOnly:true, testReport:true,
+  layoutKey:'ydYarnStore_rcvLayout_v1', file:'Receive_File',
+  quick:['challanNo','item','lcNo'], quickPh:'Challan No / Count & Type / LC No',
+  cols:[
+    {k:'src',        t:'Source', tag:1, autofit:1, search:'select', w:120},
+    {k:'stockType',  t:'Stock Type', tag:1, autofit:1, search:'select', w:85},
+    {k:'yarnSource', t:'Yarn Source', tag:1, autofit:1, search:'select', w:110},
+    {k:'rDate',      t:'Date', type:'date', search:'date', w:90},
+    {k:'party',      t:'Customer / Supplier', search:'text', w:150},
+    {k:'item',       t:'Count & Type', search:'text', w:150},
+    {k:'actualYarn', t:'Actual Yarn Name', search:'text', w:200},
+    {k:'lotNo',      t:'Lot No', search:'text', w:80},
+    {k:'challanNo',  t:'Challan No', search:'text', w:90},
+    {k:'unitPrice',  t:'Unit Price ($)', type:'num', dec:2, autofit:1, search:'range', w:90},
+    {k:'bag',        t:'Bag', type:'num', dec:0, total:1, search:'range', w:55},
+    {k:'qty',        t:'Qty. (Kg)', type:'num', dec:2, total:1, search:'range', w:90},
+    {k:'amount',     t:'Total Value ($)', type:'num', dec:2, total:1, search:'range', w:110},
+    {k:'location',   t:'Location', search:'text', w:80},
+    {k:'exeNo',      t:'EXE No', search:'text', w:80},
+    {k:'poNo',       t:'PO Number', search:'text', w:95},
+    {k:'invNo',      t:'C. Invoice No', search:'text', w:100},
+    {k:'invValue',   t:'C. Invoice Value', type:'num', dec:2, total:1, search:'range', w:110},
+    {k:'lcNo',       t:'LC No', search:'text', w:110},
+    {k:'blNo',       t:'BL No', search:'text', w:95},
+    {k:'mrrNo',      t:'MRR No', search:'text', w:85},
+    {k:'mrrDate',    t:'MRR Date', type:'date', search:'date', w:90},
+    {k:'grnStatus',  t:'GRN Status', tag:1, search:'select', w:95},
+    {k:'remarks',    t:'Remarks', search:'text', w:300},
+    ...ENTRY_COLS,
+    ...MODULES.lc.cols.filter(c=>c.group==='test'||c.test)
+  ],
+  source(){
+    const num=v=>(v===''||v==null)?'':+v;
+    const amt=(q,p)=>(p===''||p==null)?'':Math.round((+q||0)*(+p||0)*100)/100;
+    const testKeys=MODULES.lc.cols.filter(c=>c.group==='test').map(c=>c.k);
+    const common=r=>({remarks:r.remarks, createdBy:r.createdBy, createdAt:r.createdAt, modifiedBy:r.modifiedBy, modifiedAt:r.modifiedAt});
+    const a=DB.challans.map(r=>({id:'R'+r.id, src:'Challan Register', stockType:r.stockType, yarnSource:r.yarnSource,
+      rDate:r.challanDate, party:r.customerName, item:r.productName, actualYarn:r.actualYarn, lotNo:r.lotNo, challanNo:r.challanNo,
+      unitPrice:num(r.value), bag:num(r.bag), qty:num(r.challanQty), amount:amt(r.challanQty,r.value),
+      location:r.location, exeNo:r.exeNo, ...common(r)}));
+    const b=DB.lcReceipts.map(r=>{
+      const o={id:'R'+r.id, src:'LC-wise Receipt', stockType:r.stockType,
+        rDate:r.rcvDate, party:r.supplierName, item:r.countType, actualYarn:r.actualYarn, lotNo:r.lotNo, challanNo:r.challanNo,
+        unitPrice:num(r.unitPrice), qty:num(r.rcvQty), amount:amt(r.rcvQty,r.unitPrice),
+        poNo:r.poNo, invNo:r.invNo, invValue:num(r.invValue), lcNo:r.lcNo, blNo:r.blNo, mrrNo:r.mrrNo,
+        mrrDate:r.mrrDate, grnStatus:r.grnStatus, testBy:r.testBy, testAt:r.testAt, countType:r.countType,
+        supplierName:r.supplierName, rcvQty:r.rcvQty, ...common(r)};
+      testKeys.forEach(k=>o[k]=r[k]);
+      return o;
+    });
+    // entry order across both registers
+    return [...a,...b].sort((x,y)=>String(x.createdAt||'').localeCompare(String(y.createdAt||'')));
+  }
+};
+
+/* ---------- Order helpers ---------- */
+// Order Type from Order No: EXE-BLK -> In-Blk, SCW-BLK -> SCW-BLK, other BLK -> Swt-BLK
+function orderType(no){
+  const s=String(no||'').toUpperCase();
+  if(s.includes('EXE-BLK')) return 'In-Blk';
+  if(s.includes('SCW-BLK')) return 'SCW-BLK';
+  if(s.includes('BLK')) return 'Swt-BLK';
+  return '';
+}
+// Issue To values that are linked to an order (their qty counts as the order's Issue Qty)
+const ORDER_ISSUE_TO=['Soft Winding','Out Dyeing'];
+/* Issue qty per order (Soft Winding + Out Dyeing) */
+let _ordCache=null,_ordVer=null;
+function orderIssued(id){
+  const ver=DB.updated+'|'+(DB.issues||[]).length;
+  if(!_ordCache||_ordVer!==ver){ _ordCache={}; (DB.issues||[]).forEach(i=>{ if(i.orderRef) _ordCache[i.orderRef]=(_ordCache[i.orderRef]||0)+(+i.issueQty||0); }); _ordVer=ver; }
+  return Math.round((_ordCache[id]||0)*100)/100;
+}
+/* ---------- Stock helpers ---------- */
+let _stockCache=null, _stockVer=null;
+function stockById(id){
+  const ver=DB.updated+'|'+(DB.issues||[]).length+'|'+DB.challans.length+'|'+DB.lcReceipts.length;
+  if(!_stockCache||_stockVer!==ver){ _stockCache={}; stockRows().forEach(r=>_stockCache[r.id]=r); _stockVer=ver; }
+  return _stockCache[id];
+}
+function issuedMap(exceptId){
+  const mp={};
+  (DB.issues||[]).forEach(i=>{ if(i.id===exceptId) return; mp[i.stockRef]=(mp[i.stockRef]||0)+(+i.issueQty||0); });
+  return mp;
+}
+/* ---------- Yarn Back (from Outside Singing / TFO / Dyeing) — goes back into stock ---------- */
+function backByIssue(){ const mp={}; (DB.yarnBacks||[]).forEach(b=>mp[b.issueRef]=(mp[b.issueRef]||0)+(+b.backQty||0)); return mp; }
+function backedMap(){   // per stock item
+  const bi=backByIssue(), mp={};
+  (DB.issues||[]).forEach(i=>{ if(bi[i.id]) mp[i.stockRef]=(mp[i.stockRef]||0)+bi[i.id]; });
+  return mp;
+}
+function issueBack(id){ return Math.round(((backByIssue()[id])||0)*100)/100; }
+// Every received item with Issue Qty and Closing Stock
+function stockRows(exceptId){
+  const iss=issuedMap(exceptId), bk=backedMap();
+  return MODULES.receive.source().map(r=>{
+    const issueQty=Math.round((iss[r.id]||0)*100)/100, backQty=Math.round((bk[r.id]||0)*100)/100;
+    return {...r, issueQty, backQty, closeStock:Math.round(((+r.qty||0)-issueQty+backQty)*100)/100};
+  });
+}
+function stockLabel(r){
+  return `${r.item||'-'} | Lot ${r.lotNo||'-'} | ${r.party||'-'} | Challan ${r.challanNo||'-'} | Stock ${fmtNum(r.closeStock,2)} Kg`;
+}
+
+/* Stock Report — read-only; everything in Receive File (up to Edit By) with Issue Qty and Closing Stock */
+MODULES.stock = (()=>{
+  const base=MODULES.receive.cols.filter(c=>!(c.group==='test'||c.test));
+  const i=base.findIndex(c=>c.k==='qty');
+  const cols=[...base.slice(0,i+1),
+    {k:'issueQty',   t:'Issue Qty (Kg)', type:'num', dec:2, total:1, search:'range', w:100},
+    {k:'backQty',    t:'Yarn Back (Kg)', type:'num', dec:2, total:1, search:'range', w:100},
+    {k:'closeStock', t:'Closing Stock (Kg)', type:'num', dec:2, total:1, search:'range', w:120},
+    ...base.slice(i+1)];
+  return {
+    title:'Stock Report', noun:'Stock item', readOnly:true, noLimit:true,
+    layoutKey:'ydYarnStore_stockLayout_v1', file:'Stock_Report',
+    quick:['challanNo','item','lcNo','lotNo'], quickPh:'Challan / Count & Type / Lot / LC',
+    cols, source:()=>stockRows()
+  };
+})();
+
+/* Total Issue — issue from stock; each issue reduces Closing Stock in Stock Report */
+const STOCK_JOIN=['src','stockType','party','item','actualYarn','lotNo','challanNo'];
+MODULES.issue = {
+  joinStock:true,
+  title:'Total Issue', noun:'Issue', data:'issues', seq:'issue', idPrefix:'IS-',
+  layoutKey:'ydYarnStore_issueLayout_v1', file:'Total_Issue',
+  addLabel:'📤 Issue', addTitle:'Issue Yarn',
+  quick:['item','lotNo','issuedTo'], quickPh:'Count & Type / Lot / Issue To',
+  dup:['_none','_none'], dateKey:'issueDate', defaults:{},
+  keep:['issueDate','issuedTo','factoryName','orderRef'], keepFocus:'lotSearch',
+  cols:[
+    {k:'issueDate',  t:'Issue Date', type:'date', req:1, search:'date', w:90},
+    {k:'stockRef',   t:'Lot', type:'stock', hide:true},
+    {k:'src',        t:'Source', calc:true, tag:1, autofit:1, search:'text', w:120},
+    {k:'stockType',  t:'Stock Type', calc:true, tag:1, autofit:1, search:'text', w:85},
+    {k:'party',      t:'Customer / Supplier', calc:true, search:'text', w:150},
+    {k:'item',       t:'Count & Type', calc:true, search:'text', w:150},
+    {k:'actualYarn', t:'Actual Yarn Name', calc:true, search:'text', w:200},
+    {k:'lotNo',      t:'Lot No', calc:true, search:'text', w:80},
+    {k:'challanNo',  t:'Challan No', calc:true, search:'text', w:90},
+    {k:'issueQty',   t:'Issue Qty (Kg)', type:'num', dec:2, req:1, total:1, search:'range', w:100},
+    {k:'curStock',   t:'Current Stock (Kg)', type:'num', dec:2, calc:true, search:'range', w:120},
+    {k:'issuedTo',   t:'Issue To', type:'select', options:['Singing','TFO','Out Dyeing','Soft Winding','Others'], req:1, tag:1, search:'select', w:100},
+    {k:'factoryName',t:'Dye Factory Name', type:'factory', list:1, search:'text', w:160},
+    {k:'orderRef',   t:'Order No', type:'order', hide:true},
+    {k:'orderNo',    t:'Order No', calc:true, search:'text', w:150},
+    {k:'orderType',  t:'Order Type', calc:true, tag:1, autofit:1, search:'select', w:85},
+    {k:'remarks',    t:'Remarks', type:'textarea', search:'text', w:300},
+    ...ENTRY_COLS
+  ],
+  // Issue Qty must not be more than the stock available for that item
+  validate(rec, editId){
+    if(!rec.stockRef) return 'Type a Lot and press Enter, then select the lot from the list.';
+    if(rec.issuedTo==='Out Dyeing'){
+      if(!rec.factoryName) return 'For Out Dyeing, enter the Dye Factory Name.';
+    } else rec.factoryName='';
+    if(ORDER_ISSUE_TO.includes(rec.issuedTo)){
+      const od=DB.orders.find(o=>o.id===rec.orderRef);
+      if(!od) return `For ${rec.issuedTo}, type an Order No and press Enter, then select the order from the list.`;
+      rec._orderNo=od.orderNo;
+    } else { rec.orderRef=''; rec._orderNo=''; }
+    const st=stockRows(editId).find(r=>r.id===rec.stockRef);
+    if(!st) return 'Selected lot was not found in stock.';
+    if(!(rec.issueQty>0)) return 'Issue Qty must be more than 0.';
+    if(editId){ const bq=issueBack(editId); if(bq>0 && rec.issueQty+1e-9<bq) return `Issue Qty cannot be less than ${fmtNum(bq,2)} Kg — that much yarn has already come back.`; }
+    if(rec.issueQty>st.closeStock+1e-9) return `Issue Qty (${fmtNum(rec.issueQty,2)} Kg) is more than available stock (${fmtNum(st.closeStock,2)} Kg).`;
+    // keep a copy of the item details in case the receipt changes later
+    STOCK_JOIN.forEach(k=>rec['_'+k]=st[k]);
+    return '';
+  }
+};
+
+/* Read-only views of Total Issue, filtered by "Issue To":
+   Singing -> Outside Singing, TFO -> Outside TFO, Out Dyeing -> Outside Dyeing, Soft Winding -> Order Status */
+function issueView(title, issueTo, key){
+  return {
+    title, noun:'Issue', readOnly:true, joinStock:true,
+    layoutKey:'ydYarnStore_'+key+'Layout_v1', file:title.replace(/\s+/g,'_'),
+    quick:['item','lotNo'], quickPh:'Count & Type / Lot',
+    yarnBack:issueTo!=='Soft Winding',
+    cols:(()=>{ const c=MODULES.issue.cols.filter(c=>c.k!=='factoryName'||issueTo==='Out Dyeing'); if(issueTo==='Soft Winding') return c;
+      const i=c.findIndex(x=>x.k==='issueQty');
+      return [...c.slice(0,i+1),
+        {k:'backQty',     t:'Yarn Back (Kg)', type:'num', dec:2, calc:true, total:1, search:'range', w:100},
+        {k:'backPending', t:'Pending (Kg)', type:'num', dec:2, calc:true, total:1, search:'range', w:100},
+        ...c.slice(i+1)]; })(),
+    source:()=>(DB.issues||[]).filter(r=>r.issuedTo===issueTo)
+  };
+}
+MODULES.singing = issueView('Outside Singing','Singing','singing');
+MODULES.tfo     = issueView('Outside TFO','TFO','tfo');
+MODULES.odyeing = issueView('Outside Dyeing','Out Dyeing','odyeing');
+/* Order Status — orders imported from the Production Status Excel (columns C D H I J O).
+   Same Order No + Count & Type are added together into one row. Second tab shows Soft Winding issues. */
+const ORDER_TABS=[['order','Orders'],['orderSW','Soft Winding Issues']];
+MODULES.order = {
+  title:'Order Status', noun:'Order', data:'orders', seq:'order', idPrefix:'OR-',
+  importExcel:true, tabs:ORDER_TABS,
+  dup:['orderNo','productName'], dateKey:'orderDate', defaults:{},
+  keep:['orderNo','orderDate','customerName','buyerName'], keepFocus:'productName',
+  // Order Qty cannot be less than what is already issued against this order
+  validate(rec, editId){
+    if(!(rec.orderQty>0)) return 'Order Qty must be more than 0.';
+    const iss=editId?orderIssued(editId):0;
+    if(rec.orderQty+1e-9<iss) return `Order Qty cannot be less than ${fmtNum(iss,2)} Kg — that much has already been issued against this order.`;
+    return '';
+  },
+  layoutKey:'ydYarnStore_orderLayout_v1', file:'Order_Status',
+  quick:['orderNo','productName','buyerName'], quickPh:'Order No / Count & Type / Buyer',
+  cols:[
+    {k:'orderType',    t:'Order Type', calc:true, tag:1, autofit:1, search:'select', w:80},
+    {k:'orderNo',      t:'Order No', req:1, list:1, search:'text', w:160},
+    {k:'orderDate',    t:'Order Date', type:'date', req:1, search:'date', w:90},
+    {k:'customerName', t:'Customer Name', list:1, search:'text', w:200},
+    {k:'buyerName',    t:'Buyer Name', list:1, search:'text', w:200},
+    {k:'productName',  t:'Count & Type', req:1, list:1, search:'text', w:260},
+    AY_FIELD(),
+    {k:'orderQty',     t:'Order Qty (Kg)', type:'num', dec:2, req:1, total:1, search:'range', w:110},
+    {k:'issueQty',     t:'Issue Qty (Kg)', type:'num', dec:2, calc:true, total:1, search:'range', w:100},
+    {k:'pending',      t:'Pending (Kg)', type:'num', dec:2, calc:true, total:1, search:'range', w:100},
+    ...ENTRY_COLS
+  ]
+};
+MODULES.orderSW = Object.assign(issueView('Order Status','Soft Winding','orderSW'), {navKey:'order', tabs:ORDER_TABS});
+
+/* =========================================================
+   DATABASE LAYER (File System Access API + fallback)
+   ========================================================= */
+let DB = null, fileHandle = null, dbFileName = '', dirty = false, saveTimer = null;
+const FS_OK = 'showOpenFilePicker' in window;
+
+function emptyDB(){
+  const d={app:'YD Yarn Store ERP',version:1,updated:new Date().toISOString(),seq:{}};
+  Object.values(MODULES).filter(m=>m.data).forEach(m=>{ d[m.data]=[]; d.seq[m.seq]=0; });
+  d.yarnBacks=[]; d.seq.back=0;
+  return d;
+}
+function normalizeDB(d){
+  if(!d || typeof d!=='object') throw new Error('Invalid JSON');
+  d.seq = d.seq||{};
+  Object.values(MODULES).filter(m=>m.data).forEach(m=>{
+    d[m.data] = Array.isArray(d[m.data])?d[m.data]:[];
+    if(typeof d.seq[m.seq]!=='number')
+      d.seq[m.seq] = d[m.data].reduce((mx,c)=>Math.max(mx,parseInt(String(c.id||'').replace(/\D/g,''))||0),0);
+    d[m.data].forEach(c=>{ if(!c.id){ d.seq[m.seq]++; c.id=m.idPrefix+d.seq[m.seq]; } });
+  });
+  d.yarnBacks=Array.isArray(d.yarnBacks)?d.yarnBacks:[];
+  if(!d.seq.yarnSeeded){   // first time: fill the Actual Yarn Name list once
+    const now=new Date().toISOString();
+    DEFAULT_YARN_NAMES.forEach(n=>{ if(!d.yarnNames.some(y=>normKey(y.name)===normKey(n))){ d.seq.yarnName=(d.seq.yarnName||0)+1; d.yarnNames.push({id:'YN-'+d.seq.yarnName,name:n,createdBy:'System',createdAt:now}); } });
+    d.seq.yarnSeeded=1; window._needSave=true;
+  }
+  if(!d.seq.yarnGroupSeeded){   // first time: pair X/1 and X/2 of the same type, e.g. "20/1 & 20/2 KH"
+    d.yarnNames.forEach(y=>{
+      const m=String(y.name||'').match(/^(\d+)\/[12]\s+(.+)$/);
+      if(!m||String(y.group||'').trim()) return;
+      const pair=d.yarnNames.some(o=>o!==y && normKey(o.name)===normKey(`${m[1]}/${y.name.includes(m[1]+'/1')?2:1} ${m[2]}`));
+      if(pair) y.group=`${m[1]}/1 & ${m[1]}/2 ${m[2]}`;
+    });
+    d.seq.yarnGroupSeeded=1; window._needSave=true;
+  }
+  if(typeof d.seq.back!=='number') d.seq.back=d.yarnBacks.reduce((mx,c)=>Math.max(mx,parseInt(String(c.id||'').replace(/\D/g,''))||0),0);
+  return d;
+}
+
+// IndexedDB to remember file handle
+function idb(){ return new Promise((res,rej)=>{const r=indexedDB.open('ydYarnStoreERP',1);r.onupgradeneeded=()=>r.result.createObjectStore('h');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}); }
+async function idbSet(k,v){ try{const db=await idb();db.transaction('h','readwrite').objectStore('h').put(v,k);}catch(e){} }
+async function idbGet(k){ try{const db=await idb();return await new Promise(r=>{const q=db.transaction('h').objectStore('h').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(null);});}catch(e){return null;} }
+
+async function loadFromHandle(h){
+  const f = await h.getFile();
+  const txt = await f.text();
+  DB = normalizeDB(txt.trim()?JSON.parse(txt):emptyDB());
+  fileHandle = h; dbFileName = f.name;
+  await idbSet('lastHandle',h);
+  enterApp();
+}
+async function openDb(){
+  setConMsg('');
+  if(FS_OK){
+    try{
+      const [h] = await window.showOpenFilePicker({types:[{description:'JSON Database',accept:{'application/json':['.json']}}]});
+      await loadFromHandle(h);
+    }catch(e){ if(e.name!=='AbortError') setConMsg('Could not open: '+e.message); }
+  } else document.getElementById('fallbackFile').click();
+}
+async function newDb(){
+  setConMsg('');
+  DB = emptyDB();
+  if(FS_OK){
+    try{
+      const h = await window.showSaveFilePicker({suggestedName:'Yarn_Store_DB.json',types:[{description:'JSON Database',accept:{'application/json':['.json']}}]});
+      fileHandle = h; dbFileName = h.name;
+      await idbSet('lastHandle',h);
+      await writeDb();
+      enterApp();
+    }catch(e){ if(e.name!=='AbortError') setConMsg('Could not create: '+e.message); }
+  } else { fileHandle=null; dbFileName='Yarn_Store_DB.json'; enterApp(); markDirty(); }
+}
+async function reconnect(){
+  const h = await idbGet('lastHandle'); if(!h) return;
+  try{
+    let p = await h.queryPermission({mode:'readwrite'});
+    if(p!=='granted') p = await h.requestPermission({mode:'readwrite'});
+    if(p!=='granted') { setConMsg('Permission was not granted.'); return; }
+    await loadFromHandle(h);
+  }catch(e){ setConMsg('Reconnect failed — select the file with "Open Database".'); }
+}
+document.getElementById('fallbackFile').addEventListener('change',async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{ DB=normalizeDB(JSON.parse(await f.text())); fileHandle=null; dbFileName=f.name; enterApp(); }
+  catch(err){ setConMsg('Invalid JSON file: '+err.message); }
+  e.target.value='';
+});
+
+async function writeDb(){
+  const json = JSON.stringify(DB,null,2);
+  if(fileHandle){
+    const w = await fileHandle.createWritable(); await w.write(json); await w.close();
+    dirty=false; lastSaved=new Date(); updateStatus();
+  } else {
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+    a.download=dbFileName||'Yarn_Store_DB.json'; a.click(); URL.revokeObjectURL(a.href);
+    dirty=false; lastSaved=new Date(); updateStatus(); toast('Updated JSON downloaded — open this file next time');
+  }
+}
+function markDirty(){
+  DB.updated=new Date().toISOString();
+  dirty=true; updateStatus();
+  if(fileHandle){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>writeDb().catch(e=>toast('Save error: '+e.message)),300); }
+}
+function updateStatus(){
+  document.getElementById('dbName').textContent=dbFileName;
+  document.getElementById('dbState').textContent = dirty ? (fileHandle?'Saving…':'Unsaved — Save DB in ⚙ Setting') : 'Saved';
+  document.getElementById('dbStatus').classList.toggle('dirty',dirty);
+  const lu=document.getElementById('lastUpd');
+  if(lu) lu.textContent = DB&&DB.updated ? fmtDateTime(DB.updated) : '-';
+}
+function fmtTime(iso){ const d=new Date(iso); if(isNaN(d)) return ''; let h=d.getHours(),ap=h>=12?'PM':'AM'; h=h%12||12; return `${h}:${String(d.getMinutes()).padStart(2,'0')}${ap}`; }
+function fmtDateTime(iso){
+  const d=new Date(iso); if(isNaN(d)) return '-';
+  const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let h=d.getHours(), ap=h>=12?'PM':'AM'; h=h%12||12;
+  return `${String(d.getDate()).padStart(2,'0')}-${M[d.getMonth()]}-${d.getFullYear()} ${h}:${String(d.getMinutes()).padStart(2,'0')} ${ap}`;
+}
+window.addEventListener('beforeunload',e=>{ if(dirty && !fileHandle){ e.preventDefault(); e.returnValue=''; } });
+
+function setConMsg(m){ document.getElementById('conMsg').textContent=m; }
+
+/* =========================================================
+   APP SHELL
+   ========================================================= */
+// After refresh, stay on the same menu (for this tab)
+let currentMenu=(()=>{ const k=ssGet('ydys_menu'); return (MENUS.some(m=>m.key===k)||MODULES[k]||k==='settingDb')?k:'challan'; })();
+let currentUser='';
+// Remember user name/connection across refresh while this tab is open (cleared when the tab closes)
+function ssGet(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }
+function ssSet(k,v){ try{ v==null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v); }catch(e){} }
+function enterApp(){
+  if(window._needSave){ window._needSave=false; setTimeout(markDirty,0); }   // save the first-time Yarn Name list
+  document.getElementById('connectScreen').style.display='none';
+  ssSet('ydys_connected', fileHandle?'1':null);
+  const saved=ssGet('ydys_user');
+  if(saved){ document.getElementById('userName').value=saved; submitUser(); }
+  else askUser();
+}
+function askUser(){
+  const um=document.getElementById('userModal'), inp=document.getElementById('userName');
+  inp.value=''; document.getElementById('userMsg').textContent='';
+  um.classList.add('show'); setTimeout(()=>inp.focus(),50);
+}
+function submitUser(){
+  const inp=document.getElementById('userName'), v=inp.value.trim().replace(/\s+/g,' ');
+  if(!v){ document.getElementById('userMsg').textContent='Please enter your name'; inp.focus(); return; }
+  currentUser=v; ssSet('ydys_user',v);
+  document.getElementById('userModal').classList.remove('show');
+  document.getElementById('curUser').textContent=currentUser;
+  document.getElementById('app').style.display='flex';
+  updateStatus(); buildNav(); showMenu(currentMenu);
+}
+function buildNav(){
+  const nav=document.getElementById('sideNav');
+  nav.innerHTML='<div class="grp">YD Yarn Store</div>'+MENUS.map((m,i)=>
+    `<a href="#" data-k="${m.key}" class="${m.key===((MODULES[currentMenu]&&MODULES[currentMenu].navKey)||currentMenu)?'active':''} ${MODULES[m.key]||PAGES[m.key]?'':'soon'}"><span class="n">${i+1}</span>${m.name}</a>`).join('')
+    +'<div class="credit">Design &amp; Developed by<br><b>Jaman Siddiqi</b></div>';
+  nav.querySelectorAll('a').forEach(a=>a.onclick=e=>{e.preventDefault();showMenu(a.dataset.k);});
+}
+function showMenu(k){
+  currentMenu=k; ssSet('ydys_menu',k);
+  const navK=(MODULES[k]&&MODULES[k].navKey)||k;
+  document.querySelectorAll('#sideNav a').forEach(a=>a.classList.toggle('active',a.dataset.k===navK));
+  document.getElementById('main').classList.toggle('chPage',!!(MODULES[k]||PAGES[k]));
+  if(MODULES[k]) renderPage();
+  else if(PAGES[k]) PAGES[k]();
+  else {
+    const m=MENUS.find(x=>x.key===k);
+    document.getElementById('main').innerHTML=`<div class="pageTitle">${m.name}</div><div class="soonBox"><h2>${m.name}</h2>This menu will be added later.</div>`;
+  }
+}
+
+/* =========================================================
+   MONTHLY CONSUMPTION — item-wise Issue Qty per month (Kg), from Total Issue
+   ========================================================= */
+const PAGES={ consump:renderConsumption, settingDb:renderSettingDb };
+const MON=['Jan','Feb','Mar','Apr','May','June','July','Aug','Sep','Oct','Nov','Dec'];
+const CON={year:null, otype:''};
+function consumptionData(){
+  const yr=String(CON.year), rows={};
+  // every Actual Yarn Name from Setting is listed, even with no issue (shows 0.00)
+  const gk=y=>String(y.group||'').trim()||y.name;   // Report Group if set, otherwise the yarn name itself
+  (DB.yarnNames||[]).forEach(y=>{ if(y.name&&!rows[gk(y)]) rows[gk(y)]=Array(12).fill(0); });
+  (DB.issues||[]).forEach(i=>{
+    const d=String(i.issueDate||''); if(d.slice(0,4)!==yr) return;
+    const od=i.orderRef?DB.orders.find(o=>o.id===i.orderRef):null;
+    const ot=od?orderType(od.orderNo):(i._orderNo?orderType(i._orderNo):'');
+    if(CON.otype==='__none'){ if(ot) return; } else if(CON.otype && ot!==CON.otype) return;
+    // Item Name = Actual Yarn Name of the issued lot (from Challan Register / LC-wise Receipt)
+    const st=stockById(i.stockRef), item=String((st?st.actualYarn:i._actualYarn)||'').trim()||'(No Actual Yarn Name)';
+    const yn=(DB.yarnNames||[]).find(y=>normKey(y.name)===normKey(item)); const key=yn?gk(yn):item;
+    const m=+d.slice(5,7)-1; if(!(m>=0&&m<12)) return;
+    (rows[key]=rows[key]||Array(12).fill(0))[m]+=(+i.issueQty||0);   // Issue Qty as entered (Kg)
+  });
+  // same order as the Setting list; anything not in it goes last
+  const pos=k=>{ const i=(DB.yarnNames||[]).findIndex(y=>normKey(gk(y))===normKey(k)); return i<0?1e9:i; };
+  return Object.keys(rows).sort((a,b)=>pos(a)-pos(b)||a.localeCompare(b,undefined,{numeric:true})).map(k=>({item:k,m:rows[k],total:rows[k].reduce((s,x)=>s+x,0)}));
+}
+function renderConsumption(){
+  const years=[...new Set((DB.issues||[]).map(i=>String(i.issueDate||'').slice(0,4)).filter(y=>/^\d{4}$/.test(y)).concat(String(new Date().getFullYear())))].sort();
+  // default = running (current) year
+  if(!CON.year||!years.includes(String(CON.year))) CON.year=String(new Date().getFullYear());
+  const main=document.getElementById('main');
+  main.innerHTML=`<div class="panel gridPanel">
+    <div class="toolbar">
+      <label style="font-size:12px;color:var(--muted)">Year</label>
+      <select id="conYear" style="padding:2px 6px;font-size:12px;height:24px;border:1px solid var(--line);border-radius:3px;background:#fff;width:80px">${years.map(y=>`<option ${y==CON.year?'selected':''}>${y}</option>`).join('')}</select>
+      <label style="font-size:12px;color:var(--muted);margin-left:8px">Order Type</label>
+      <select id="conType" style="padding:2px 6px;font-size:12px;height:24px;border:1px solid var(--line);border-radius:3px;background:#fff;width:130px">${[['','All'],['In-Blk','In-Blk'],['Swt-BLK','Swt-BLK'],['SCW-BLK','SCW-BLK'],['__none','Without Order']].map(([v,t])=>`<option value="${v}" ${v===CON.otype?'selected':''}>${t}</option>`).join('')}</select>
+      <span style="width:10px"></span>
+      <button class="btn" id="conPrint">🖨 Print</button>
+      <button class="btn" id="conExcel">⬇ Excel</button>
+      <span class="spacer"></span><span class="info">Issue Qty from Total Issue · UoM: KG</span>
+    </div>
+    <div class="tblWrap"><table class="grid" id="conTable"></table></div></div>`;
+  document.getElementById('conYear').onchange=e=>{CON.year=e.target.value;drawConsumption();};
+  document.getElementById('conType').onchange=e=>{CON.otype=e.target.value;drawConsumption();};
+  document.getElementById('conPrint').onclick=printConsumption;
+  document.getElementById('conExcel').onclick=excelConsumption;
+  drawConsumption();
+}
+function conHead(){ return `<tr><th style="width:50px">SL No</th><th style="text-align:left">Item Name</th><th style="width:55px">UoM</th>${MON.map(m=>`<th class="num">Issue-${m}<br>${CON.year}</th>`).join('')}<th class="num">Total<br>Consumption<br>${CON.year}</th></tr>`; }
+function conTotals(list){ const t=Array(12).fill(0); list.forEach(r=>r.m.forEach((v,i)=>t[i]+=v)); return t; }
+// column widths (resizable with the mouse, remembered in this browser)
+const CON_KEY='ydYarnStore_conWidths_v2';
+const CON_DEF=[45,220,45,...Array(12).fill(76),110];
+let conW=(()=>{ try{ const w=JSON.parse(localStorage.getItem(CON_KEY)); if(Array.isArray(w)&&w.length===16) return w; }catch(e){} return CON_DEF.slice(); })();
+function drawConsumption(){
+  const list=consumptionData(), tot=conTotals(list), f=v=>Math.abs(v)<0.005?'':fmtNum(v,2);   // 0 shows as blank
+  const cell=v=>{ const s=f(v); return `<td class="num" ${s?'style="font-weight:700"':''}>${s}</td>`; };   // a value is bold
+  const heads=['SL No','Item Name','UoM',...MON.map(m=>`Issue-${m}<br>${CON.year}`),`Total<br>Consumption<br>${CON.year}`];
+  const tbl=document.getElementById('conTable');
+  tbl.style.cssText=`table-layout:fixed;width:${conW.reduce((s,x)=>s+x,0)}px;min-width:100%`;
+  tbl.innerHTML=`<colgroup>${conW.map((w,i)=>`<col data-i="${i}" style="width:${w}px">`).join('')}<col></colgroup>
+   <thead><tr>${heads.map((t,i)=>`<th style="cursor:default;position:sticky;top:0" ${i>2?'class="num"':''}>${t}<span class="rz" data-i="${i}" title="Drag to resize (double-click = default)"></span></th>`).join('')}<th class="fill"></th></tr></thead>
+   <tbody>${list.map((r,i)=>`<tr class="dr"><td style="text-align:center">${i+1}</td><td>${esc(r.item)}</td><td style="text-align:center">KG</td>${r.m.map(cell).join('')}${cell(r.total)}<td class="fill"></td></tr>`).join('')}
+   ${list.length?'':`<tr class="dr"><td colspan="17" class="empty">No issue found for ${CON.year}${CON.otype?' with this Order Type':''}</td></tr>`}
+   <tr class="filler"><td colspan="17"></td></tr></tbody>
+   <tfoot><tr><td></td><td></td><td style="text-align:center">Total</td>${tot.map(v=>`<td class="num">${f(v)}</td>`).join('')}<td class="num">${f(tot.reduce((s,x)=>s+x,0))}</td><td class="fill"></td></tr></tfoot>`;
+  tbl.querySelectorAll('.rz').forEach(rz=>{
+    const i=+rz.dataset.i;
+    rz.addEventListener('mousedown',e=>{
+      e.preventDefault(); e.stopPropagation();
+      const x0=e.clientX, w0=conW[i], col=tbl.querySelector(`col[data-i="${i}"]`);
+      document.body.classList.add('resizing');
+      const mv=ev=>{ conW[i]=Math.max(35,w0+ev.clientX-x0); col.style.width=conW[i]+'px'; tbl.style.width=conW.reduce((s,x)=>s+x,0)+'px'; };
+      const up=()=>{ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); document.body.classList.remove('resizing'); try{ localStorage.setItem(CON_KEY,JSON.stringify(conW)); }catch(e){} };
+      document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
+    });
+    rz.addEventListener('dblclick',()=>{ conW[i]=CON_DEF[i]; try{ localStorage.setItem(CON_KEY,JSON.stringify(conW)); }catch(e){} drawConsumption(); });
+  });
+}
+function conTitle(){ const o=document.getElementById('conType'); return `Monthly Consumption ${CON.year}`+(CON.otype?` — Order Type: ${o.options[o.selectedIndex].text}`:''); }
+function printConsumption(){
+  const list=consumptionData(), tot=conTotals(list), f=v=>Math.abs(v)<0.005?'':fmtNum(v,2);   // 0 shows as blank
+  document.getElementById('printArea').innerHTML=`
+   <div class="pHead"><h1>Akij Textile Mills Ltd.</h1><h2>Yarn Dyeing Unit — YD Yarn Store</h2><h3>${esc(conTitle())}</h3></div>
+   <div class="pMeta"><span>Total Items: ${list.length} · UoM: KG</span><span>Printed: ${new Date().toLocaleString('en-GB')}</span></div>
+   <table class="pt"><thead>${conHead()}</thead><tbody>${list.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.item)}</td><td>KG</td>${r.m.map(v=>`<td class="num">${f(v)?`<b>${f(v)}</b>`:''}</td>`).join('')}<td class="num"><b>${f(r.total)}</b></td></tr>`).join('')}</tbody>
+   <tfoot><tr><td></td><td></td><td>Total</td>${tot.map(v=>`<td class="num">${f(v)}</td>`).join('')}<td class="num">${f(tot.reduce((s,x)=>s+x,0))}</td></tr></tfoot></table>
+   <div class="sign"><div>Prepared By</div><div>Store In-charge</div><div>Checked By</div><div>Approved By</div></div>`;
+  window.print();
+}
+function excelConsumption(){
+  const list=consumptionData(), tot=conTotals(list), r2=v=>Math.abs(v)<0.005?'':Math.round(v*100)/100;
+  const html=`<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body><table border="1">
+   <tr><th colspan="16">${esc(conTitle())}</th></tr>
+   <tr><th>SL No</th><th>Item Name</th><th>UoM</th>${MON.map(m=>`<th>Issue-${m} ${CON.year}</th>`).join('')}<th>Total Consumption ${CON.year}</th></tr>
+   ${list.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.item)}</td><td>KG</td>${r.m.map(v=>`<td>${r2(v)}</td>`).join('')}<td>${r2(r.total)}</td></tr>`).join('')}
+   <tr><td></td><td></td><td>Total</td>${tot.map(v=>`<td>${r2(v)}</td>`).join('')}<td>${r2(tot.reduce((s,x)=>s+x,0))}</td></tr></table></body></html>`;
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel'}));
+  a.download=`Monthly_Consumption_${CON.year}.xls`; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* =========================================================
+   GENERIC REGISTER MODULE (Challan Register, LC-wise Receipt …)
+   ========================================================= */
+const ROW_LIMIT=100;
+const STATE={};
+function M(){ return MODULES[currentMenu]; }
+function S(){
+  const k=currentMenu;
+  if(!STATE[k]) STATE[k]={filter:{},quick:'',selected:new Set(),view:[],hidden:0,lastClicked:null,layout:loadLayout(MODULES[k])};
+  return STATE[k];
+}
+function rows(){ const m=M(); return m.source ? m.source() : DB[m.data]; }
+function colOf(k){ return M().cols.find(c=>c.k===k); }
+let formMode='rec', testIds=[];
+function formCols(){ return M().cols.filter(c=>!c.calc && (formMode==='test' ? c.group==='test' : c.group!=='test')); }
+function isTestCol(c){ return c.group==='test'||c.test; }
+
+function renderPage(){
+  const m=M(), s=S(), main=document.getElementById('main');
+  main.innerHTML=`
+  ${m.tabs?`<div class="tabBar">${m.tabs.map(([k,t])=>`<button class="tab ${k===currentMenu?'on':''}" data-tab="${k}">${t}</button>`).join('')}</div>`:''}
+  <div class="panel gridPanel">
+    <div class="toolbar">
+      <input class="quick" id="quickSearch" style="width:280px" placeholder="🔍 ${esc(m.quickPh)}" value="${esc(s.quick)}">
+      <button class="btn blue" id="btnAdv">⚙ Advance Search</button>
+      <button class="btn" id="btnClearFilter" style="display:none">✕ Clear Filter</button>
+      <span style="width:10px"></span>
+      ${m.readOnly?'':`<button class="btn green" id="btnAdd">${m.addLabel||'＋ Add'}</button>
+      <button class="btn orange" id="btnEdit" disabled>✎ Edit</button>
+      <button class="btn red" id="btnDel" disabled>🗑 Delete</button>`}
+      ${m.importExcel?'<button class="btn green" id="btnImport">📥 Excel Entry</button>':''}
+      ${m.yarnBack?'<button class="btn green" id="btnBack" disabled>↩ Yarn Back</button>':''}
+      ${m.readOnly&&m.allowDelete?'<button class="btn red" id="btnDel" disabled>🗑 Delete</button>':''}
+      ${m.testReport&&!m.readOnly?`<button class="btn" id="btnTest" disabled style="border-color:#2f855a;color:#2f855a">🧪 Test Report</button>`:''}
+      ${m.testReport?`<button class="btn" id="btnTestView" style="border-color:#2f855a;color:#2f855a">👁 Test View</button>
+      <button class="btn" id="btnTestPrint" style="border-color:#2f855a;color:#2f855a">🖨 Test Print</button>`:''}
+      <button class="btn" id="btnPrint">🖨 Print</button>
+      <button class="btn" id="btnExcel">⬇ Excel</button>
+      <span class="spacer"></span>
+      <span class="info" id="rowInfo"></span>
+    </div>
+    <div id="filterInfo" style="display:none;padding:5px 12px;font-size:12px;background:#fffbea;border-bottom:1px solid var(--line);color:#7b5e00"></div>
+    <div class="tblWrap"><table class="grid" id="chTable"></table></div>
+  </div>`;
+
+  document.getElementById('btnAdv').onclick=openAdv;
+  document.getElementById('btnClearFilter').onclick=()=>{s.filter={};s.quick='';s.selected.clear();renderPage();};
+  main.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>showMenu(b.dataset.tab));
+  if(m.yarnBack) document.getElementById('btnBack').onclick=()=>{ if(s.selected.size===1) openYarnBack([...s.selected][0]); };
+  if(m.importExcel) document.getElementById('btnImport').onclick=()=>document.getElementById('xlsxFile').click();
+  if(m.readOnly&&m.allowDelete) document.getElementById('btnDel').onclick=deleteSelected;
+  if(!m.readOnly){
+    document.getElementById('btnAdd').onclick=()=>openForm(null);
+    document.getElementById('btnEdit').onclick=()=>{ if(s.selected.size===1) openForm([...s.selected][0]); };
+    document.getElementById('btnDel').onclick=deleteSelected;
+  }
+  if(m.testReport){
+    const bt=document.getElementById('btnTest'); if(bt) bt.onclick=()=>{ if(s.selected.size) openTestForm([...s.selected]); };
+    document.getElementById('btnTestView').onclick=testView;
+    document.getElementById('btnTestPrint').onclick=testPrint;
+  }
+  document.getElementById('btnPrint').onclick=printReport;
+  document.getElementById('btnExcel').onclick=exportExcel;
+  const qs=document.getElementById('quickSearch');
+  qs.oninput=e=>{s.quick=e.target.value;drawTable();};
+  if(s.quick){ qs.focus(); qs.setSelectionRange(s.quick.length,s.quick.length); }
+  refreshDatalists();
+  drawTable();
+}
+
+/* ---------- Dropdown list (from previous entries) ---------- */
+function distinct(f){
+  const s=new Set();
+  rows().forEach(c=>{ const v=gv(c,f); if(v!=null && String(v).trim()!=='') s.add(String(v)); });
+  return [...s].sort((a,b)=>a.localeCompare(b));
+}
+function refreshDatalists(){
+  document.getElementById('datalists').innerHTML=M().cols.filter(c=>c.list||c.listFrom).map(c=>{
+    const vals=c.listFrom ? (DB[c.listFrom]||[]).map(y=>y.name).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})) : distinct(c.k);
+    return `<datalist id="dl_${c.k}">${vals.map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`; }).join('');
+}
+
+/* ---------- Advance Search popup ---------- */
+const advModal=document.getElementById('advModal');
+function openAdv(){
+  const m=M(), s=S();
+  refreshDatalists();
+  document.getElementById('advTitle').textContent='Advance Search — '+m.title;
+  const parts=[];
+  m.cols.forEach(c=>{
+    const lb=c.label||c.t;
+    if(c.search==='date'){
+      parts.push(`<div><label>${esc(lb)} From</label><input type="date" data-f="${c.k}__from"></div>`);
+      parts.push(`<div><label>${esc(lb)} To</label><input type="date" data-f="${c.k}__to"></div>`);
+    } else if(c.search==='select'){
+      parts.push(`<div><label>${esc(lb)}</label><select data-f="${c.k}"><option value="">— All —</option>${(c.options?[...new Set([...c.options,...distinct(c.k)])]:distinct(c.k)).map(v=>`<option>${esc(v)}</option>`).join('')}</select></div>`);
+    } else if(c.search==='range'){
+      parts.push(`<div><label>${esc(lb)} Min – Max</label><div class="range"><input type="number" data-f="${c.k}__min"><input type="number" data-f="${c.k}__max"></div></div>`);
+    } else if(c.search==='text'){
+      parts.push(`<div><label>${esc(lb)}</label><input data-f="${c.k}" ${c.list?`list="dl_${c.k}"`:''} placeholder="contains…"></div>`);
+    }
+  });
+  const g=document.getElementById('advGrid'); g.innerHTML=parts.join('');
+  g.querySelectorAll('[data-f]').forEach(el=>{ el.value=s.filter[el.dataset.f]??''; el.addEventListener('keydown',e=>{if(e.key==='Enter')applySearch();}); });
+  advModal.classList.add('show');
+  setTimeout(()=>g.querySelector('[data-f]').focus(),50);
+}
+function closeAdv(){ advModal.classList.remove('show'); }
+advModal.querySelectorAll('[data-aclose]').forEach(b=>b.onclick=closeAdv);
+document.getElementById('btnAdvSearch').onclick=applySearch;
+document.getElementById('btnAdvReset').onclick=()=>advModal.querySelectorAll('[data-f]').forEach(el=>el.value='');
+function applySearch(){
+  const s=S(); s.filter={};
+  advModal.querySelectorAll('[data-f]').forEach(el=>{ if(el.value!=='') s.filter[el.dataset.f]=el.value; });
+  s.selected.clear(); closeAdv(); drawTable();
+}
+function filterRows(){
+  const m=M(), s=S(), F=s.filter;
+  const has=(v,q)=>String(v??'').toLowerCase().includes(String(q).toLowerCase());
+  const num=v=>parseFloat(v)||0;
+  const q=s.quick.trim().toLowerCase();
+  return rows().filter(c=>{
+    for(const [fk,fv] of Object.entries(F)){
+      const [k,op]=fk.split('__'), v=gv(c,k);
+      if(op==='from'){ if((v||'')<fv) return false; }
+      else if(op==='to'){ if((v||'')>fv) return false; }
+      else if(op==='min'){ if(num(v)<+fv) return false; }
+      else if(op==='max'){ if(num(v)>+fv) return false; }
+      else if(colOf(k).search==='select'){ if(String(v??'')!==fv) return false; }
+      else if(!has(v,fv)) return false;
+    }
+    if(q){ const hay=m.quick.map(k=>gv(c,k)).join(' ').toLowerCase(); if(!hay.includes(q)) return false; }
+    return true;
+  });
+}
+
+/* ---------- Column layout: width resize + drag reorder (remembered in this browser) ---------- */
+function defW(m){ const o={}; m.cols.forEach(c=>o[c.k]=c.w||100); return o; }
+function loadLayout(m){
+  let L=null; try{ L=JSON.parse(localStorage.getItem(m.layoutKey)); }catch(e){}
+  const keys=m.cols.map(c=>c.k);
+  let order=(L&&Array.isArray(L.order))?L.order.filter(k=>keys.includes(k)):[];
+  keys.forEach((k,i)=>{ if(order.includes(k)) return; const prev=keys.slice(0,i).reverse().find(x=>order.includes(x)); order.splice(prev?order.indexOf(prev)+1:0,0,k); });
+  return {order, widths:Object.assign(defW(m),(L&&L.widths)||{}), manual:(L&&L.manual)||{}};
+}
+function saveLayout(){ try{ localStorage.setItem(M().layoutKey,JSON.stringify(S().layout)); }catch(e){} }
+function resetLayout(){
+  Object.values(MODULES).forEach(m=>{ try{ localStorage.removeItem(m.layoutKey); }catch(e){} });
+  Object.keys(STATE).forEach(k=>STATE[k].layout=loadLayout(MODULES[k]));
+  if(MODULES[currentMenu]) drawTable(); toast('Column layout reset');
+}
+let _mctx=null;
+function textW(s,font){ if(!_mctx) _mctx=document.createElement('canvas').getContext('2d'); _mctx.font=font; return _mctx.measureText(String(s)).width; }
+function autoFitCols(){
+  const L=S().layout, man=L.manual||{};
+  M().cols.filter(c=>c.autofit).forEach(col=>{
+    if(man[col.k]) return;
+    let w=textW(col.t,'600 11.5px Segoe UI, Tahoma, Arial')+16;
+    rows().forEach(c=>{
+      let v=gv(c,col.k); if(v===''||v==null) return;
+      if(col.type==='num') v=fmtNum(v,col.dec);
+      w=Math.max(w,textW(v,'11.5px Segoe UI, Tahoma, Arial')+(col.tag?26:16));
+    });
+    L.widths[col.k]=Math.ceil(Math.min(w,260));
+  });
+}
+function getCols(){ return S().layout.order.map(k=>colOf(k)).filter(c=>c&&!c.hide); }
+const SL_W=36;
+function tableWidth(){ const W=S().layout.widths; return SL_W+getCols().reduce((s,c)=>s+(W[c.k]||100),0); }
+function calcTotals(list){
+  const tot={}; M().cols.filter(c=>c.total).forEach(c=>tot[c.k]=0);
+  list.forEach(r=>Object.keys(tot).forEach(k=>tot[k]+=(+gv(r,k)||0)));
+  return tot;
+}
+function drawTable(){
+  const m=M(), s=S(), L=s.layout;
+  const isFiltered = Object.keys(s.filter).length>0 || s.quick.trim()!=='';
+  const all=filterRows();                    // no sorting — entry order
+  s.hidden = (!isFiltered && !m.noLimit && all.length>ROW_LIMIT) ? all.length-ROW_LIMIT : 0;
+  s.view = s.hidden ? all.slice(-ROW_LIMIT) : all;   // without a filter, only the last 100 entries
+  autoFitCols();
+  const tbl=document.getElementById('chTable');
+  const tot=calcTotals(s.view);
+  const cols=getCols();
+  tbl.style.width=tableWidth()+'px';
+  const blank=`<td class="sl"></td>${cols.map(()=>'<td></td>').join('')}<td class="fill"></td>`;
+  tbl.innerHTML=`<colgroup><col style="width:${SL_W}px">${cols.map(c=>`<col data-k="${c.k}" style="width:${L.widths[c.k]}px">`).join('')}<col></colgroup>
+  <thead><tr><th class="sl">SL</th>${
+    cols.map(c=>`<th data-k="${c.k}" draggable="true" class="${c.type==='num'?'num':''} ${isTestCol(c)?'tcol':''}" title="Drag to move column · drag right edge to resize (double-click = default)"><span class="thTxt">${c.t}</span><span class="rz"></span></th>`).join('')}<th class="fill"></th></tr></thead>
+  <tbody>${s.view.map((c,i)=>`<tr class="dr ${s.selected.has(c.id)?'sel':''}" data-id="${c.id}"><td class="sl">${i+1}</td>${
+    cols.map(col=>`<td class="${col.type==='num'?'num':''}">${cell(c,col)}</td>`).join('')}<td class="fill"></td></tr>`).join('')}
+    ${s.view.length?'':`<tr class="dr"><td colspan="${cols.length+2}" class="empty">No ${esc(m.noun.toLowerCase())} found</td></tr>`}
+    <tr class="filler">${blank}</tr></tbody>
+  <tfoot><tr><td class="sl"></td>${cols.map((col,i)=>`<td class="${col.type==='num'?'num':''}">${
+    i===0?'Total':(tot[col.k]!=null?fmtNum(tot[col.k],col.dec):'')}</td>`).join('')}<td class="fill"></td></tr></tfoot>`;
+  bindColumnUI(tbl);
+  tbl.querySelectorAll('tbody tr[data-id]').forEach(tr=>{
+    tr.onclick=e=>{
+      const id=tr.dataset.id, sel=window.getSelection();
+      // user is selecting text to copy — don't treat it as a row click
+      if(e.shiftKey) sel.removeAllRanges();
+      else if(sel && sel.toString().trim()) return;
+      if(e.shiftKey && s.lastClicked){
+        const ids=s.view.map(c=>c.id), a=ids.indexOf(s.lastClicked), b=ids.indexOf(id);
+        if(a>-1&&b>-1){ ids.slice(Math.min(a,b),Math.max(a,b)+1).forEach(x=>s.selected.add(x)); }
+      } else if(e.ctrlKey){ s.selected.has(id)?s.selected.delete(id):s.selected.add(id); }
+      else { const only=s.selected.size===1&&s.selected.has(id); s.selected.clear(); if(!only) s.selected.add(id); }
+      s.lastClicked=id; refreshSel();
+    };
+    if(!m.readOnly) tr.ondblclick=()=>openForm(tr.dataset.id);
+  });
+  refreshSel();
+  const active=Object.keys(s.filter).length>0;
+  const fi=document.getElementById('filterInfo');
+  fi.style.display=active?'block':'none'; fi.textContent=active?'Advance Search: '+filterSummary(true):'';
+  document.getElementById('btnClearFilter').style.display=(active||s.quick)?'inline-block':'none';
+}
+// Update row highlight + buttons without redrawing the table (keeps text selection for copy)
+function refreshSel(){
+  const m=M(), s=S();
+  document.querySelectorAll('#chTable tbody tr[data-id]').forEach(tr=>tr.classList.toggle('sel',s.selected.has(tr.dataset.id)));
+  if(!m.readOnly) document.getElementById('btnEdit').disabled=s.selected.size!==1;
+  const bd=document.getElementById('btnDel'); if(bd) bd.disabled=s.selected.size===0;
+  const bt=document.getElementById('btnTest'); if(bt) bt.disabled=s.selected.size===0;
+  const bb=document.getElementById('btnBack'); if(bb) bb.disabled=s.selected.size!==1;
+  document.getElementById('rowInfo').textContent=[s.hidden?`Showing last ${ROW_LIMIT} of ${rows().length} — use search/filter to see more`:'', s.selected.size>1?`${s.selected.size} selected`:''].filter(Boolean).join(' · ');
+}
+function bindColumnUI(tbl){
+  let dragK=null; const L=S().layout;
+  tbl.querySelectorAll('thead th[data-k]').forEach(th=>{
+    const k=th.dataset.k;
+    // ---- resize ----
+    th.querySelector('.rz').addEventListener('mousedown',e=>{
+      e.preventDefault(); e.stopPropagation();
+      const startX=e.clientX, startW=L.widths[k], col=tbl.querySelector(`col[data-k="${k}"]`);
+      document.body.classList.add('resizing');
+      const mv=ev=>{ const w=Math.max(35,startW+ev.clientX-startX); L.widths[k]=w; col.style.width=w+'px'; tbl.style.width=tableWidth()+'px'; };
+      const up=()=>{ (L.manual=L.manual||{})[k]=true; document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); document.body.classList.remove('resizing'); saveLayout(); };
+      document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
+    });
+    th.querySelector('.rz').addEventListener('dblclick',e=>{ e.stopPropagation(); L.widths[k]=colOf(k).w||100; if(L.manual) delete L.manual[k]; saveLayout(); drawTable(); });
+    // ---- drag reorder ----
+    th.addEventListener('dragstart',e=>{ dragK=k; th.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',k); });
+    th.addEventListener('dragend',()=>{ dragK=null; tbl.querySelectorAll('th').forEach(x=>x.classList.remove('dragging','dropL','dropR')); });
+    th.addEventListener('dragover',e=>{
+      if(!dragK||dragK===k) return; e.preventDefault();
+      const r=th.getBoundingClientRect(), left=e.clientX<r.left+r.width/2;
+      th.classList.toggle('dropL',left); th.classList.toggle('dropR',!left);
+    });
+    th.addEventListener('dragleave',()=>th.classList.remove('dropL','dropR'));
+    th.addEventListener('drop',e=>{
+      e.preventDefault(); if(!dragK||dragK===k) return;
+      const r=th.getBoundingClientRect(), left=e.clientX<r.left+r.width/2;
+      const o=L.order.filter(x=>x!==dragK); let i=o.indexOf(k); if(!left) i++;
+      o.splice(i,0,dragK); L.order=o; saveLayout(); drawTable();
+    });
+  });
+}
+function gv(c,k){
+  // Balance = Qty − Received
+  if(M()&&M().data==='pipeline'){
+    if(k==='received') return piReceived(c);
+    if(k==='balance'){ if(c.qty===''||c.qty==null) return ''; return Math.round(((+c.qty||0)-piReceived(c))*100)/100; }
+  }
+  if(M()&&M().data==='orders'){
+    if(k==='orderType') return orderType(c.orderNo);
+    if(k==='issueQty') return orderIssued(c.id);
+    if(k==='pending')  return Math.round(((+c.orderQty||0)-orderIssued(c.id))*100)/100;
+  }
+  if(M()&&M().joinStock){
+    if(k==='orderType') return orderType(gv(c,'orderNo'));
+    if(k==='orderNo'){ if(!c.orderRef) return ''; const od=DB.orders.find(o=>o.id===c.orderRef); return od?od.orderNo:(c._orderNo||''); }
+    if(STOCK_JOIN.includes(k)){ const st=stockById(c.stockRef); return st?st[k]:c['_'+k]; }
+    if(k==='backQty') return issueBack(c.id);
+    if(k==='backPending') return Math.round(((+c.issueQty||0)-issueBack(c.id))*100)/100;
+    if(k==='curStock'){ const st=stockById(c.stockRef); return st?st.closeStock:''; }
+  }
+  // Entry By: first entry user — never changes · Edit By: last editor
+  if(k==='entryBy') return c.createdBy?`${c.createdBy} | ${fmtTime(c.createdAt)}`:'';
+  if(k==='editBy')  return c.modifiedBy?`${c.modifiedBy} | ${fmtTime(c.modifiedAt)}`:'';
+  // Total Value = Challan Qty × Unit Price (calculated, not stored in DB)
+  if(k==='testBy') return c.testBy?`${c.testBy} | ${fmtTime(c.testAt)}`:'';
+  // Total IPI = Thin -50% + Thick +50% + Neps +200%
+  if(k==='totalIPI'){ const a=[c.thin50,c.thick50,c.neps200]; if(a.every(x=>x===''||x==null)) return ''; return a.reduce((s,x)=>s+(+x||0),0); }
+  if(k==='totalValue'){ if(c.value===''||c.value==null) return ''; return Math.round((+c.challanQty||0)*(+c.value||0)*100)/100; }
+  return c[k];
+}
+// Tag — colour based on value
+const TAG_COLORS=[['#e9d8fd','#553c9a'],['#c6f6d5','#22543d'],['#bee3f8','#2a4365'],['#feebc8','#7b341e'],['#fed7e2','#702459'],['#c4f1f9','#065666'],['#fefcbf','#744210'],['#e2e8f0','#2d3748'],['#fbd38d','#652b19'],['#9ae6b4','#1c4532']];
+function tagHtml(v){
+  const s=String(v); let n=0; for(const ch of s.toLowerCase()) n=(n*31+ch.charCodeAt(0))>>>0;
+  const [bg,fg]=TAG_COLORS[n%TAG_COLORS.length];
+  return `<span class="tag" style="background:${bg};color:${fg}">${esc(s)}</span>`;
+}
+function cell(c,col){
+  const v=gv(c,col.k);
+  if(col.k==='entryBy'||col.k==='editBy'||col.k==='testBy'){ if(!v) return ''; const t=col.k==='entryBy'?c.createdAt:col.k==='editBy'?c.modifiedAt:c.testAt; return `<span title="${esc(new Date(t).toLocaleString('en-GB'))}">${esc(v)}</span>`; }
+  if(col.tag && v) return tagHtml(v);
+  if(col.type==='date') return fmtDate(v);
+  if(col.type==='num') return (v===''||v==null)?'':fmtNum(v,col.dec);
+  return esc(v??'');
+}
+
+/* ---------- Add / Edit ---------- */
+let editId=null;
+const modal=document.getElementById('recModal'), form=document.getElementById('recForm');
+function fld(k){ return form.elements.namedItem(k); }
+function buildForm(){
+  document.getElementById('formGrid').innerHTML=formCols().map(c=>{
+    const lb=`<label>${esc(c.label||c.t)}${c.req?' <b>*</b>':''}</label>`;
+    if(c.type==='textarea') return `<div class="full">${lb}<textarea name="${c.k}" rows="2"></textarea></div>`;
+    if(c.type==='factory') return `<div id="factoryWrap" style="display:none">${lb.replace('</label>',' <b>*</b></label>')}<input name="factoryName" list="dl_factoryName" placeholder="Type or pick a factory" autocomplete="off"></div>`;
+    if(c.type==='order') return `<div id="orderWrap" style="display:none">${lb.replace('</label>',' <b>*</b></label>')}<input name="orderSearch" placeholder="Type Order No, press Enter" autocomplete="off"><input type="hidden" name="orderRef"></div>
+      <div class="full" id="orderInfo" style="display:none;font-size:12px;background:#ebf4ff;border:1px solid #bee3f8;color:#2a4365;padding:6px 10px;border-radius:4px"></div>`;
+    if(c.type==='stock') return `<div>${lb.replace('</label>',' <b>*</b></label>')}<input name="lotSearch" placeholder="Type Lot, press Enter" autocomplete="off"><input type="hidden" name="stockRef"></div>
+      <div class="full" id="stockAvail" style="display:none;font-size:12px;background:#f0fff4;border:1px solid #c6f6d5;color:#22543d;padding:6px 10px;border-radius:4px"></div>`;
+    if(c.type==='select') return `<div>${lb}<select name="${c.k}" ${c.req?'required':''}><option value=""></option>${c.options.map(o=>`<option>${esc(o)}</option>`).join('')}</select></div>`;
+    const t=c.type==='num'?'type="number" step="any" min="0"':c.type==='date'?'type="date"':'';
+    return `<div>${lb}<input name="${c.k}" ${t} ${c.list||c.listFrom?`list="dl_${c.k}"`:''} ${c.req?'required':''} ${c.listFrom?'placeholder="Type to search…" autocomplete="off"':''}></div>`;
+  }).join('');
+}
+function openForm(id){
+  const m=M();
+  formMode='rec'; buildForm(); editId=id; document.getElementById('formMsg').textContent='';
+  document.getElementById('mTitle').textContent=(id?'Edit ':(m.addTitle?'':'Add '))+(id||!m.addTitle?m.noun:m.addTitle)+' — '+m.title;
+  document.getElementById('btnSaveCont').style.display=id?'none':'inline-block';
+  refreshDatalists();
+  if(fld('stockRef')) fillStockPicker(id);
+  if(id){ const c=rows().find(x=>x.id===id); formCols().forEach(col=>fld(col.k).value=c[col.k]??''); }
+  else { if(m.dateKey) fld(m.dateKey).value=today(); Object.entries(m.defaults).forEach(([k,v])=>fld(k).value=v); }
+  if(fld('stockRef')){ const st=stockRows(editId).find(r=>r.id===fld('stockRef').value); if(st) fld('lotSearch').value=st.lotNo||''; showAvail(); toggleOrderField(); }
+  modal.classList.add('show'); setTimeout(()=>fld(formCols()[0].k).focus(),50);
+}
+// Issue form: type a Lot + Enter -> popup of matching lots that have stock
+function fillStockPicker(editIssueId){
+  const inp=fld('lotSearch');
+  inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); openLotPopup(); } };
+  inp.oninput=()=>{ fld('stockRef').value=''; showAvail(); };
+  const os=fld('orderSearch');
+  if(os){
+    os.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); openOrderPopup(); } };
+    os.oninput=()=>{ fld('orderRef').value=''; showOrderInfo(); };
+    const fn=fld('factoryName'); if(fn) fn.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); fld('orderSearch').focus(); } };
+    fld('issuedTo').onchange=()=>{ toggleOrderField(); const v=fld('issuedTo').value; if(v==='Out Dyeing') fld('factoryName').focus(); else if(ORDER_ISSUE_TO.includes(v)) fld('orderSearch').focus(); };
+  }
+}
+function showAvail(){
+  const box=document.getElementById('stockAvail'); if(!box||!fld('stockRef')) return;
+  const st=stockRows(editId).find(r=>r.id===fld('stockRef').value);
+  if(!st){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display='block';
+  box.innerHTML=`<b>${esc(st.item||'-')}</b> · Lot <b>${esc(st.lotNo||'-')}</b> · ${esc(st.party||'-')} · Challan ${esc(st.challanNo||'-')} · ${esc(st.src)}<br>
+    Available stock: <b>${fmtNum(st.closeStock,2)} Kg</b> (Received ${fmtNum(st.qty,2)} Kg, already issued ${fmtNum(st.issueQty,2)} Kg${st.backQty?`, yarn back ${fmtNum(st.backQty,2)} Kg`:''})`;
+}
+const lotModal=document.getElementById('lotModal');
+let lotList=[], pickCb=null;
+// Generic picker popup: title, rows, [[key,heading]], numeric keys, highlight key, on-pick callback
+function showPicker(title, list, cols, num, hl, emptyMsg, cb){
+  lotList=list; pickCb=cb;
+  document.getElementById('lotTitle').textContent=title;
+  document.getElementById('lotBody').innerHTML = list.length
+    ? `<table class="vt lotT"><thead><tr><th>SL</th>${cols.map(c=>`<th>${c[1]}</th>`).join('')}</tr></thead><tbody>${
+        list.map((r,i)=>`<tr data-i="${i}" tabindex="0"><td>${i+1}</td>${cols.map(([k])=>`<td class="${num.includes(k)?'num':''}" ${k===hl?'style="font-weight:700;color:#22543d"':''}>${
+          /date/i.test(k)?fmtDate(r[k]):num.includes(k)?fmtNum(r[k],2):esc(r[k]??'')}</td>`).join('')}</tr>`).join('')}</tbody></table>`
+    : `<div class="empty">${esc(emptyMsg)}</div>`;
+  lotModal.querySelectorAll('tr[data-i]').forEach(tr=>{
+    tr.onclick=()=>pickLot(+tr.dataset.i);
+    tr.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); pickLot(+tr.dataset.i); } else if(e.key==='ArrowDown'&&tr.nextElementSibling){ e.preventDefault(); tr.nextElementSibling.focus(); } else if(e.key==='ArrowUp'&&tr.previousElementSibling){ e.preventDefault(); tr.previousElementSibling.focus(); } };
+  });
+  lotModal.classList.add('show');
+  const first=lotModal.querySelector('tr[data-i]'); if(first) setTimeout(()=>first.focus(),30);
+}
+function openLotPopup(){
+  const raw=fld('lotSearch').value.trim(), q=raw.toLowerCase();
+  const cur=editId?(DB.issues.find(x=>x.id===editId)||{}).stockRef:null;
+  const list=stockRows(editId).filter(r=>(r.closeStock>0||r.id===cur) && (!q || String(r.lotNo||'').toLowerCase().includes(q)));
+  showPicker(`Lots in stock${q?` matching "${raw}"`:''} — ${list.length} found`, list,
+    [['src','Source'],['lotNo','Lot No'],['item','Count & Type'],['actualYarn','Actual Yarn Name'],['party','Customer / Supplier'],['challanNo','Challan No'],['rDate','Date'],['stockType','Stock Type'],['lcNo','LC No'],['qty','Received (Kg)'],['issueQty','Issued (Kg)'],['closeStock','Available (Kg)']],
+    ['qty','issueQty','closeStock'], 'closeStock', `No lot with stock found${q?` for "${raw}"`:''}.`,
+    r=>{ fld('stockRef').value=r.id; fld('lotSearch').value=r.lotNo||''; showAvail(); fld('issueQty').focus(); });
+}
+// Soft Winding / Out Dyeing: type Order No + Enter -> orders from Order Status
+function openOrderPopup(){
+  const raw=fld('orderSearch').value.trim(), q=raw.toLowerCase();
+  const list=DB.orders.filter(o=>!q||String(o.orderNo||'').toLowerCase().includes(q))
+    .map(o=>({...o, issueQty:orderIssued(o.id), pending:Math.round(((+o.orderQty||0)-orderIssued(o.id))*100)/100}));
+  showPicker(`Orders${q?` matching "${raw}"`:''} — ${list.length} found`, list,
+    [['orderNo','Order No'],['orderDate','Order Date'],['customerName','Customer Name'],['buyerName','Buyer Name'],['productName','Count & Type'],['actualYarn','Actual Yarn Name'],['orderQty','Order Qty (Kg)'],['issueQty','Issue Qty (Kg)'],['pending','Pending (Kg)']],
+    ['orderQty','issueQty','pending'], 'pending', `No order found${q?` for "${raw}"`:''} in Order Status.`,
+    o=>{ fld('orderRef').value=o.id; fld('orderSearch').value=o.orderNo; showOrderInfo(); fld('remarks').focus(); });
+}
+function showOrderInfo(){
+  const box=document.getElementById('orderInfo'); if(!box) return;
+  const od=DB.orders.find(o=>o.id===fld('orderRef').value);
+  if(!od||!ORDER_ISSUE_TO.includes(fld('issuedTo').value)){ box.style.display='none'; return; }
+  const iss=orderIssued(od.id);
+  box.style.display='block';
+  box.innerHTML=`Order <b>${esc(od.orderNo)}</b> · ${esc(od.productName||'-')} · ${esc(od.buyerName||'-')}<br>Order Qty <b>${fmtNum(od.orderQty,2)} Kg</b> · Issued ${fmtNum(iss,2)} Kg · Pending <b>${fmtNum((+od.orderQty||0)-iss,2)} Kg</b>`;
+}
+function toggleOrderField(){
+  const w=document.getElementById('orderWrap'); if(!w) return;
+  const fw=document.getElementById('factoryWrap'); if(fw) fw.style.display=fld('issuedTo').value==='Out Dyeing'?'block':'none';
+  const on=ORDER_ISSUE_TO.includes(fld('issuedTo').value);
+  w.style.display=on?'block':'none';
+  if(on){ const od=DB.orders.find(o=>o.id===fld('orderRef').value); fld('orderSearch').value=od?od.orderNo:''; }
+  showOrderInfo();
+}
+function closeLot(){ lotModal.classList.remove('show'); }
+lotModal.querySelectorAll('[data-lclose]').forEach(b=>b.onclick=()=>{ closeLot(); fld('lotSearch')&&fld('lotSearch').focus(); });
+function pickLot(i){
+  const r=lotList[i]; if(!r) return;
+  closeLot(); document.getElementById('formMsg').textContent=''; form.querySelectorAll('.err').forEach(e=>e.classList.remove('err')); if(pickCb) pickCb(r);
+}
+/* ---------- Test Report (Uster) — add/edit on selected rows ---------- */
+function openTestForm(ids){
+  const m=M(); formMode='test'; testIds=ids; editId=null;
+  buildForm(); document.getElementById('formMsg').textContent='';
+  const list=ids.map(id=>rows().find(r=>r.id===id));
+  const first=list[0];
+  document.getElementById('mTitle').textContent=`🧪 Uster Test Report — ${ids.length>1?ids.length+' rows':(first.countType||'')+' · Lot '+(first.lotNo||'-')}`;
+  document.getElementById('btnSaveCont').style.display='none';
+  let info=document.getElementById('testInfo');
+  if(!info){ info=document.createElement('div'); info.id='testInfo'; info.style.cssText='font-size:12px;background:#f0fff4;border:1px solid #c6f6d5;color:#22543d;padding:6px 10px;border-radius:4px;margin-bottom:10px'; form.parentNode.insertBefore(info,form); }
+  info.style.display='block';
+  info.innerHTML = ids.length>1
+    ? `The same test data will be applied to <b>${ids.length} selected rows</b>. Blank fields keep their existing values.`
+    : `Supplier: <b>${esc(first.supplierName||'-')}</b> · Count & Type: <b>${esc(first.countType||'-')}</b> · Lot: <b>${esc(first.lotNo||'-')}</b> · LC: <b>${esc(first.lcNo||'-')}</b>`;
+  if(ids.length===1) formCols().forEach(col=>fld(col.k).value=first[col.k]??'');
+  // Delete test data button
+  let clr=document.getElementById('btnClearTest');
+  if(!clr){ clr=document.createElement('button'); clr.id='btnClearTest'; clr.className='btn red'; clr.style.marginRight='auto'; clr.textContent='🗑 Delete Test Report';
+    modal.querySelector('.mf').prepend(clr); clr.onclick=clearTest; }
+  clr.style.display=list.some(r=>formCols().some(c=>r[c.k]!==''&&r[c.k]!=null))?'inline-block':'none';
+  modal.classList.add('show'); setTimeout(()=>fld('countNe').focus(),50);
+}
+function saveTest(){
+  const multi=testIds.length>1, now=new Date().toISOString();
+  testIds.forEach(id=>{
+    const r=rows().find(x=>x.id===id); if(!r) return;
+    formCols().forEach(c=>{
+      const el=fld(c.k), raw=el.value;
+      if(multi && String(raw).trim()==='') return;      // multi-row: blank field keeps existing value
+      r[c.k]= c.type==='num' ? (raw===''?'':parseFloat(raw)) : String(raw).trim();
+    });
+    r.testBy=currentUser; r.testAt=now;
+  });
+  markDirty(); toast(`Test report saved (${testIds.length} row${testIds.length>1?'s':''})`); closeModal(); renderPage();
+}
+/* ---------- Excel (.xlsx) reader — no library needed (uses the browser's built-in unzip) ---------- */
+async function readXlsx(file){
+  const buf=await file.arrayBuffer(), dv=new DataView(buf), td=new TextDecoder();
+  let e=buf.byteLength-22; while(e>=0 && dv.getUint32(e,true)!==0x06054b50) e--;
+  if(e<0) throw new Error('This is not a valid .xlsx file.');
+  const n=dv.getUint16(e+10,true); let p=dv.getUint32(e+16,true); const files={};
+  for(let k=0;k<n;k++){
+    const method=dv.getUint16(p+10,true), csize=dv.getUint32(p+20,true), nl=dv.getUint16(p+28,true), el=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true), off=dv.getUint32(p+42,true);
+    files[td.decode(new Uint8Array(buf,p+46,nl))]={method,csize,off}; p+=46+nl+el+cl;
+  }
+  const get=async name=>{
+    const f=files[name]; if(!f) return null;
+    const start=f.off+30+dv.getUint16(f.off+26,true)+dv.getUint16(f.off+28,true);
+    const data=new Uint8Array(buf,start,f.csize);
+    if(f.method===0) return td.decode(data);
+    const out=await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+    return td.decode(out);
+  };
+  const xml=s=>new DOMParser().parseFromString(s,'application/xml');
+  // shared strings
+  const ss=[]; const sst=await get('xl/sharedStrings.xml');
+  if(sst) xml(sst).querySelectorAll('si').forEach(si=>ss.push([...si.getElementsByTagName('t')].map(t=>t.textContent).join('')));
+  // first sheet
+  const sheetName=Object.keys(files).filter(f=>/^xl\/worksheets\/sheet\d+\.xml$/.test(f)).sort((a,b)=>parseInt(a.match(/\d+/))-parseInt(b.match(/\d+/)))[0];
+  if(!sheetName) throw new Error('No worksheet found in the file.');
+  const rowsOut={};
+  xml(await get(sheetName)).querySelectorAll('sheetData > row').forEach(r=>{
+    const ri=+r.getAttribute('r'); const row=rowsOut[ri]={};
+    r.querySelectorAll('c').forEach(c=>{
+      const ref=c.getAttribute('r'), col=ref.replace(/\d+/g,''), t=c.getAttribute('t');
+      const v=c.querySelector('v'), is=c.querySelector('is');
+      let val = t==='s' ? ss[+(v&&v.textContent)] : t==='inlineStr' ? (is?[...is.getElementsByTagName('t')].map(x=>x.textContent).join(''):'') : v ? v.textContent : '';
+      if(t!=='s'&&t!=='str'&&t!=='inlineStr'&&t!=='b'&&val!==''&&!isNaN(val)) val=+val;
+      row[col]=val;
+    });
+  });
+  return rowsOut;
+}
+// Order No: anything from a trailing "R" is removed — R-1, R1, R-25, R123345678 …
+// (EXE-BLK-29580/26R-1 -> EXE-BLK-29580/26)
+function cleanOrderNo(v){ return String(v??'').trim().replace(/\s*R-?\d*\s*$/i,'').trim(); }
+function xlDate(v){
+  if(v===''||v==null) return '';
+  if(typeof v==='number') return new Date(Math.round((v-25569)*86400000)).toISOString().slice(0,10);
+  const d=new Date(v); return isNaN(d)?String(v):new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+}
+/* Order import: C=Order No, D=Order Date, H=Customer, I=Buyer, J=Product, O=Order Qty.
+   Same Order No + Product in the file are added together. If that Order No + Product is
+   already in the table it is a duplicate: listed in a message and skipped. */
+let pendingImport=null;
+document.getElementById('xlsxFile').addEventListener('change',async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  let sheet; try{ sheet=await readXlsx(f); }catch(err){ alert('Could not read the Excel file: '+err.message); return; }
+  const keys=Object.keys(sheet).map(Number).sort((a,b)=>a-b);
+  const hdr=keys.find(r=>/order\s*qty/i.test(String(sheet[r].O||'')));
+  if(!hdr){ alert('Header row not found — column O should be "Order Qty(KG)".'); return; }
+  const grp=new Map(); let lines=0;
+  keys.filter(r=>r>hdr).forEach(r=>{
+    const x=sheet[r], ord=cleanOrderNo(x.C), prod=String(x.J??'').trim();
+    if(!ord||!prod) return;                 // skips blank and Total rows
+    lines++;
+    const k=ord.toLowerCase()+'||'+prod.toLowerCase();
+    if(!grp.has(k)) grp.set(k,{orderNo:ord, orderDate:xlDate(x.D), customerName:String(x.H??'').trim(), buyerName:String(x.I??'').trim(), productName:prod, orderQty:0});
+    grp.get(k).orderQty+= +x.O||0;
+  });
+  const list=[...grp.values()].map(r=>({...r, orderQty:Math.round(r.orderQty*100)/100}));
+  if(!list.length){ alert('No order rows found in the file.'); return; }
+  const lc=v=>String(v||'').toLowerCase();
+  list.forEach(r=>r._exist=DB.orders.find(o=>lc(cleanOrderNo(o.orderNo))===lc(r.orderNo)&&lc(o.productName)===lc(r.productName)));
+  // Already in the table (same Order No + Count & Type) = duplicate: never updated, only skipped
+  const dups=list.filter(r=>r._exist), fresh=list.filter(r=>!r._exist);
+  pendingImport=fresh;
+  if(!dups.length){ doImport(); return; }
+  document.getElementById('viewTitle').textContent=`⚠ Duplicate orders — ${f.name}`;
+  document.getElementById('viewBody').innerHTML=`
+    <div style="margin-bottom:8px;font-size:12.5px"><b style="color:var(--err)">${dups.length} duplicate${dups.length>1?'s':''}</b> found (same Order No + Count & Type is already in the table). They will be skipped.
+      ${fresh.length?` <b style="color:var(--ok)">${fresh.length} new</b> order line${fresh.length>1?'s':''} will be imported.`:' There is nothing new to import.'}</div>
+    <div style="max-height:55vh;overflow:auto"><table class="vt"><thead><tr><th>SL</th><th>Order No</th><th>Count & Type</th><th>Buyer Name</th><th>Qty in File (Kg)</th><th>Qty in Table (Kg)</th></tr></thead><tbody>
+    ${dups.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.orderNo)}</td><td>${esc(r.productName)}</td><td>${esc(r.buyerName)}</td><td class="num">${fmtNum(r.orderQty,2)}</td><td class="num">${fmtNum(r._exist.orderQty,2)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  const vb=document.getElementById('btnViewPrint');
+  vb.textContent=fresh.length?`Skip & Import ${fresh.length} new`:'Nothing to import'; vb.disabled=!fresh.length; vb.onclick=doImport;
+  viewModal.classList.add('show');
+});
+function doImport(){
+  if(!pendingImport) return;
+  const now=new Date().toISOString(); let nNew=0,nUpd=0;
+  const skipped=document.getElementById('viewTitle').textContent.startsWith('⚠')?document.querySelectorAll('#viewBody tbody tr').length:0;
+  pendingImport.forEach(r=>{
+    const {_exist,...rec}=r;
+    DB.seq.order=(DB.seq.order||0)+1; DB.orders.push({id:'OR-'+DB.seq.order,...rec,createdBy:currentUser,createdAt:now}); nNew++;
+  });
+  pendingImport=null; viewModal.classList.remove('show');
+  if(nNew) markDirty();
+  toast(`Imported ${nNew} new order line${nNew!==1?'s':''}`+(skipped?` · ${skipped} duplicate${skipped>1?'s':''} skipped`:'')); renderPage();
+}
+
+/* ---------- Yarn Back popup ---------- */
+function openYarnBack(issueId){
+  const iss=DB.issues.find(i=>i.id===issueId); if(!iss) return;
+  const st=stockById(iss.stockRef)||{};
+  const list=DB.yarnBacks.filter(b=>b.issueRef===issueId);
+  const back=issueBack(issueId), pend=Math.round(((+iss.issueQty||0)-back)*100)/100;
+  document.getElementById('viewTitle').textContent=`↩ Yarn Back — ${iss.issuedTo}`;
+  document.getElementById('viewBody').innerHTML=`
+    <div style="font-size:12.5px;background:#f0fff4;border:1px solid #c6f6d5;color:#22543d;padding:7px 10px;border-radius:4px;margin-bottom:10px">
+      <b>${esc(st.item||iss._item||'-')}</b> · Lot <b>${esc(st.lotNo||iss._lotNo||'-')}</b> · ${esc(st.party||iss._party||'-')}${iss.factoryName?` · ${esc(iss.factoryName)}`:''} · Issued ${fmtDate(iss.issueDate)}<br>
+      Issue Qty <b>${fmtNum(iss.issueQty,2)} Kg</b> · Yarn Back ${fmtNum(back,2)} Kg · Pending <b>${fmtNum(pend,2)} Kg</b></div>
+    ${list.length?`<div style="font-weight:600;color:var(--navy);margin-bottom:4px">Previous Yarn Back</div>
+    <table class="vt" style="margin-bottom:12px"><thead><tr><th>SL</th><th>Back Date</th><th>Back Qty (Kg)</th><th>Remarks</th><th>Entry By</th><th></th></tr></thead><tbody>
+    ${list.map((b,i)=>`<tr><td>${i+1}</td><td>${fmtDate(b.backDate)}</td><td class="num">${fmtNum(b.backQty,2)}</td><td>${esc(b.remarks||'')}</td><td>${esc(b.createdBy||'')} | ${fmtTime(b.createdAt)}</td><td style="text-align:center"><button class="btn red" style="padding:1px 7px;font-size:11px" data-delback="${b.id}">Delete</button></td></tr>`).join('')}
+    </tbody></table>`:''}
+    <div class="fgrid" id="backForm">
+      <div><label>Back Date <b>*</b></label><input type="date" id="bkDate" value="${today()}"></div>
+      <div><label>Back Qty (Kg) <b>*</b></label><input type="number" step="any" min="0" id="bkQty" placeholder="Max ${fmtNum(pend,2)}"></div>
+      <div></div>
+      <div class="full"><label>Remarks</label><textarea id="bkRem" rows="2"></textarea></div>
+    </div>
+    <div id="bkMsg" style="color:var(--err);font-size:12px;margin-top:6px"></div>`;
+  document.querySelectorAll('[data-delback]').forEach(b=>b.onclick=()=>{
+    if(!confirm('Delete this Yarn Back entry? The qty will be taken out of stock again.')) return;
+    const chk=stockById(iss.stockRef), bq=(DB.yarnBacks.find(x=>x.id===b.dataset.delback)||{}).backQty||0;
+    if(chk && chk.closeStock+1e-9<bq){ alert(`Cannot delete — only ${fmtNum(chk.closeStock,2)} Kg of this lot is in stock now (it has been issued again).`); return; }
+    DB.yarnBacks=DB.yarnBacks.filter(x=>x.id!==b.dataset.delback); markDirty(); toast('Yarn Back deleted'); drawTable(); openYarnBack(issueId);
+  });
+  const vb=document.getElementById('btnViewPrint'); vb.disabled=pend<=0; vb.textContent=pend>0?'↩ Save Yarn Back':'Fully back'; 
+  vb.onclick=()=>{
+    const q=parseFloat(document.getElementById('bkQty').value), d=document.getElementById('bkDate').value, msg=document.getElementById('bkMsg');
+    if(!d){ msg.textContent='Enter the Back Date.'; return; }
+    if(!(q>0)){ msg.textContent='Back Qty must be more than 0.'; return; }
+    if(q>pend+1e-9){ msg.textContent=`Back Qty (${fmtNum(q,2)} Kg) is more than the pending qty (${fmtNum(pend,2)} Kg).`; return; }
+    DB.seq.back=(DB.seq.back||0)+1;
+    DB.yarnBacks.push({id:'YB-'+DB.seq.back, issueRef:issueId, backDate:d, backQty:q, remarks:document.getElementById('bkRem').value.trim(), createdBy:currentUser, createdAt:new Date().toISOString()});
+    viewModal.classList.remove('show'); markDirty(); toast(`Yarn Back saved: ${fmtNum(q,2)} Kg`); drawTable();
+  };
+  viewModal.classList.add('show'); setTimeout(()=>{ const q=document.getElementById('bkQty'); if(q&&pend>0) q.focus(); },50);
+}
+
+/* ---------- Test View / Test Print ---------- */
+function testCols(){ return M().cols.filter(c=>isTestCol(c) && c.k!=='testBy' && c.k!=='testRemarks' && c.k!=='testResult'); }
+function hasTest(r){ return M().cols.some(c=>c.group==='test' && r[c.k]!=='' && r[c.k]!=null); }
+function testList(){
+  // Selected rows if any, otherwise all visible rows that have test data
+  const s=S();
+  const base = s.selected.size ? s.view.filter(r=>s.selected.has(r.id)) : s.view;
+  return base.filter(hasTest);
+}
+function tv(r,c){ const v=gv(r,c.k); return (v===''||v==null)?'-':fmtNum(v,c.dec); }
+function testReportHtml(list, forPrint){
+  const tc=testCols();
+  const info=r=>`<b>${esc(r.countType||'-')}</b><br><span style="font-weight:400">Lot: ${esc(r.lotNo||'-')}</span><br><span style="font-weight:400;font-size:.9em">${esc(r.supplierName||'')}</span>`;
+  const res=r=>r.testResult?(forPrint?esc(r.testResult):tagHtml(r.testResult)):'-';
+  const cls=forPrint?'pt':'vt';
+  if(list.length<=6){
+    // parameters down the side, one column per lot — easy side-by-side comparison
+    return `<table class="${cls} vert" style="${list.length<3?'width:'+(list.length===1?'60%':'80%')+';margin:0 auto':''}"><thead><tr><th style="text-align:left;width:170px">Parameter</th>${list.map(r=>`<th>${info(r)}</th>`).join('')}</tr></thead><tbody>
+      <tr><td>Supplier</td>${list.map(r=>`<td>${esc(r.supplierName||'-')}</td>`).join('')}</tr>
+      <tr><td>LC No</td>${list.map(r=>`<td>${esc(r.lcNo||'-')}</td>`).join('')}</tr>
+      <tr><td>Challan No</td>${list.map(r=>`<td>${esc(r.challanNo||'-')}</td>`).join('')}</tr>
+      <tr><td>Received Qty (Kg)</td>${list.map(r=>`<td class="num">${fmtNum(r.rcvQty,2)||'-'}</td>`).join('')}</tr>
+      ${tc.map(c=>`<tr><td><b>${esc(c.t)}</b></td>${list.map(r=>`<td class="num">${tv(r,c)}</td>`).join('')}</tr>`).join('')}
+      <tr><td><b>Test Result</b></td>${list.map(r=>`<td style="text-align:center">${res(r)}</td>`).join('')}</tr>
+      <tr><td>Test Remarks</td>${list.map(r=>`<td>${esc(r.testRemarks||'-')}</td>`).join('')}</tr>
+      <tr><td>Test By</td>${list.map(r=>`<td>${r.testBy?esc(r.testBy)+'<br><span style="font-size:.9em">'+new Date(r.testAt).toLocaleString('en-GB')+'</span>':'-'}</td>`).join('')}</tr>
+    </tbody></table>`;
+  }
+  // many rows: one line per lot
+  return `<table class="${cls}"><thead><tr><th>SL</th><th>Count &amp; Type</th><th>Lot</th><th>Supplier</th><th>LC No</th>${tc.map(c=>`<th>${esc(c.t)}</th>`).join('')}<th>Result</th><th>Remarks</th><th>Test By</th></tr></thead><tbody>
+    ${list.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.countType||'')}</td><td>${esc(r.lotNo||'')}</td><td>${esc(r.supplierName||'')}</td><td>${esc(r.lcNo||'')}</td>${tc.map(c=>`<td class="num">${tv(r,c)}</td>`).join('')}<td style="text-align:center">${res(r)}</td><td>${esc(r.testRemarks||'')}</td><td>${esc(r.testBy||'')}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+const viewModal=document.getElementById('viewModal');
+viewModal.querySelectorAll('[data-vclose]').forEach(b=>b.onclick=()=>viewModal.classList.remove('show'));
+
+function testView(){
+  const list=testList();
+  if(!list.length){ toast(S().selected.size?'No test data in the selected rows':'No test data found'); return; }
+  document.getElementById('viewTitle').textContent=`👁 Uster Test Report — ${list.length} row${list.length>1?'s':''}`;
+  document.getElementById('viewBody').innerHTML=testReportHtml(list,false);
+  const vb=document.getElementById('btnViewPrint'); vb.disabled=false; vb.textContent='🖨 Print'; vb.onclick=()=>{ viewModal.classList.remove('show'); testPrint(); };
+  viewModal.classList.add('show');
+}
+function testPrint(){
+  const list=testList();
+  if(!list.length){ toast(S().selected.size?'No test data in the selected rows':'No test data found'); return; }
+  document.getElementById('printArea').innerHTML=`
+   <div class="pHead"><h1>Akij Textile Mills Ltd.</h1><h2>Yarn Dyeing Unit — YD Yarn Store</h2><h3>Uster Test Report</h3></div>
+   <div class="pMeta"><span>Total: ${list.length} lot${list.length>1?'s':''}</span><span>Printed: ${new Date().toLocaleString('en-GB')}</span></div>
+   ${testReportHtml(list,true)}
+   <div class="sign"><div>Tested By</div><div>QC In-charge</div><div>Store In-charge</div><div>Approved By</div></div>`;
+  window.print();
+}
+function clearTest(){
+  if(!confirm(`Delete the Uster test report of ${testIds.length} row${testIds.length>1?'s':''}?`)) return;
+  testIds.forEach(id=>{ const r=rows().find(x=>x.id===id); if(!r) return; formCols().forEach(c=>delete r[c.k]); delete r.testBy; delete r.testAt; });
+  markDirty(); toast('Test report deleted'); closeModal(); renderPage();
+}
+function closeModal(){ modal.classList.remove('show'); const i=document.getElementById('testInfo'); if(i) i.style.display='none'; const c=document.getElementById('btnClearTest'); if(c) c.style.display='none'; formMode='rec'; }
+modal.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeModal);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ if(lotModal.classList.contains('show')){ closeLot(); return; } if(viewModal.classList.contains('show')) viewModal.classList.remove('show'); else if(modal.classList.contains('show')) closeModal(); else if(advModal.classList.contains('show')) closeAdv(); }
+  if(e.key==='Enter'&&e.ctrlKey&&modal.classList.contains('show')) saveRecord(false);
+});
+document.getElementById('btnSaveRec').onclick=()=>saveRecord(false);
+document.getElementById('btnSaveCont').onclick=()=>saveRecord(true);
+form.addEventListener('submit',e=>{e.preventDefault();saveRecord(false);});
+
+function saveRecord(cont){
+  if(formMode==='test') return saveTest();
+  const m=M();
+  let ok=true; form.querySelectorAll('.err').forEach(e=>e.classList.remove('err'));
+  formCols().forEach(c=>{ const el=fld(c.k); if(c.req && !String(el.value).trim()){ el.classList.add('err'); ok=false; } });
+  if(!ok){ document.getElementById('formMsg').textContent='Please fill in the required (*) fields.'; return; }
+  const rec={};
+  formCols().forEach(c=>{ const el=fld(c.k); rec[c.k]= c.type==='num' ? (el.value===''?'':parseFloat(el.value)) : el.value.trim(); });
+  // a receipt's quantity cannot go below what has already been issued from it
+  if(editId && (m.data==='challans'||m.data==='lcReceipts')){
+    const issued=issuedMap()['R'+editId]||0, q=+(m.data==='challans'?rec.challanQty:rec.rcvQty)||0;
+    if(q+1e-9<issued){ document.getElementById('formMsg').textContent=`Qty cannot be less than ${fmtNum(issued,2)} Kg — that much has already been issued from this item.`; return; }
+  }
+  for(const c of formCols()){ if(c.check){ const r=c.check(rec[c.k]); if(r!==true){ document.getElementById('formMsg').textContent=r; fld(c.k).classList.add('err'); return; } } }
+  // Setting: a yarn name must be unique
+  if(m.data==='yarnNames' && DB.yarnNames.some(y=>y.id!==editId && normKey(y.name)===normKey(rec.name))){ document.getElementById('formMsg').textContent=`"${rec.name}" is already in the list.`; fld('name').classList.add('err'); return; }
+  // Setting: renaming a yarn name updates every Challan Register row that uses it
+  if(m.data==='yarnNames' && editId){ const old=(DB.yarnNames.find(y=>y.id===editId)||{}).name; if(old && old!==rec.name) AY_DATA.forEach(dk=>(DB[dk]||[]).forEach(c=>{ if(normKey(c.actualYarn)===normKey(old)) c.actualYarn=rec.name; })); }
+  if(m.validate){ const err=m.validate(rec,editId); if(err){ document.getElementById('formMsg').textContent=err; fld('issueQty')&&fld('issueQty').classList.add('err'); return; } }
+  // duplicate warning (Challan No + Lot)
+  const [d1,d2]=m.dup;
+  if(m.data!=='issues' && String(rec[d1]||'').trim()){
+    const lc=v=>String(v||'').toLowerCase();
+    const dup=rows().find(c=>c.id!==editId && lc(c[d1])===lc(rec[d1]) && lc(c[d2])===lc(rec[d2]));
+    if(dup && !confirm(`${colOf(d1).t} "${rec[d1]}" (${colOf(d2).t} ${rec[d2]||'-'}) already exists. Save anyway?`)) return;
+  }
+  if(editId){ Object.assign(rows().find(c=>c.id===editId),rec,{modifiedAt:new Date().toISOString(),modifiedBy:currentUser}); toast(m.noun+' updated'); }
+  else { DB.seq[m.seq]=(DB.seq[m.seq]||0)+1; rec.id=m.idPrefix+DB.seq[m.seq]; rec.createdAt=new Date().toISOString(); rec.createdBy=currentUser; rows().push(rec); toast(m.noun+' added'); }
+  markDirty();
+  if(!editId && cont){
+    // Save & Continue: keep common info, clear the rest
+    const saved={}; m.keep.forEach(k=>saved[k]=fld(k).value);
+    form.reset(); m.keep.forEach(k=>fld(k).value=saved[k]);
+    renderPage(); refreshDatalists(); if(fld('stockRef')){ fillStockPicker(null); fld('stockRef').value=''; showAvail(); toggleOrderField(); } fld(m.keepFocus).focus();
+    return;
+  }
+  closeModal();
+  renderPage();
+}
+function deleteSelected(){
+  const m=M(), s=S();
+  if(!s.selected.size) return;
+  if(m.data==='yarnNames'){
+    const used=[...s.selected].map(id=>DB.yarnNames.find(y=>y.id===id)).filter(y=>y&&AY_DATA.some(dk=>(DB[dk]||[]).some(c=>normKey(c.actualYarn)===normKey(y.name))));
+    if(used.length){ alert(`Cannot delete — already used in a register: ${used.map(y=>y.name).join(', ')}`); return; }
+  }
+  if(m.data==='issues'){
+    const used=[...s.selected].filter(id=>issueBack(id)>0);
+    if(used.length){ alert(`${used.length} selected issue${used.length>1?'s have':' has'} Yarn Back entries. Delete the Yarn Back entries first (in Outside Singing / TFO / Dyeing).`); return; }
+  }
+  if(m.data==='orders'){
+    const used=[...s.selected].filter(id=>orderIssued(id)>0);
+    if(used.length){ alert(`${used.length} selected order${used.length>1?'s have':' has'} issues against them (Total Issue). Delete or change those issues first.`); return; }
+  }
+  if(m.data==='challans'||m.data==='lcReceipts'){
+    const used=[...s.selected].filter(id=>(DB.issues||[]).some(i=>i.stockRef==='R'+id));
+    if(used.length){ alert(`${used.length} selected row${used.length>1?'s have':' has'} already been issued from stock (Total Issue). Delete those issues first.`); return; }
+  }
+  if(!confirm(`Delete ${s.selected.size} ${m.noun.toLowerCase()}${s.selected.size>1?'s':''}?`)) return;
+  DB[m.data]=rows().filter(c=>!s.selected.has(c.id));
+  s.selected.clear(); markDirty(); toast('Deleted'); renderPage();
+}
+
+/* ---------- Print ---------- */
+function filterSummary(advOnly){
+  const s=S();
+  const p=Object.entries(s.filter).map(([fk,v])=>{
+    const [k,op]=fk.split('__'), c=colOf(k), lb=c.label||c.t;
+    const sym={from:' From',to:' To',min:' ≥',max:' ≤'}[op]||'';
+    return `${lb}${sym}: ${c.type==='date'?fmtDate(v):v}`;
+  });
+  if(s.quick && !advOnly) p.push(`Search: "${s.quick}"`);
+  return p.join(' | ');
+}
+function fmtCellPlain(c,col){
+  const v=gv(c,col.k);
+  if(col.type==='date') return fmtDate(v);
+  if(col.type==='num') return (v===''||v==null)?'':fmtNum(v,col.dec);
+  return esc(v??'');
+}
+function printReport(){
+  const m=M(), s=S();
+  const list = s.selected.size ? s.view.filter(c=>s.selected.has(c.id)) : s.view;
+  if(!list.length){ toast('No rows to print'); return; }
+  const tot=calcTotals(list), cols=getCols();
+  const fs=filterSummary();
+  document.getElementById('printArea').innerHTML=`
+   <div class="pHead"><h1>Akij Textile Mills Ltd.</h1><h2>Yarn Dyeing Unit — YD Yarn Store</h2><h3>${esc(m.title)} Report</h3></div>
+   <div class="pMeta"><span>Total Rows: ${list.length}${s.selected.size?' (selected)':''}</span><span>Printed: ${new Date().toLocaleString('en-GB')}</span></div>
+   ${fs?`<div class="pFilter"><b>Search Criteria:</b> ${esc(fs)}</div>`:''}
+   <table class="pt"><thead><tr><th>SL</th>${cols.map(c=>`<th class="${c.type==='num'?'num':''}">${c.t}</th>`).join('')}</tr></thead>
+   <tbody>${list.map((c,i)=>`<tr><td>${i+1}</td>${cols.map(col=>`<td class="${col.type==='num'?'num':''}">${fmtCellPlain(c,col)}</td>`).join('')}</tr>`).join('')}</tbody>
+   <tfoot><tr><td></td>${cols.map((col,ci)=>`<td class="${col.type==='num'?'num':''}">${ci===0?'Grand Total':(tot[col.k]!=null?fmtNum(tot[col.k],col.dec):'')}</td>`).join('')}</tr></tfoot></table>
+   <div class="sign"><div>Prepared By</div><div>Store In-charge</div><div>Checked By</div><div>Approved By</div></div>`;
+  window.print();
+}
+
+/* ---------- Excel export (xls via HTML table) ---------- */
+function exportExcel(){
+  const m=M(), s=S();
+  const list = s.selected.size ? s.view.filter(c=>s.selected.has(c.id)) : s.view;
+  const cols=getCols();
+  const html=`<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body><table border="1">
+   <tr><th>SL</th>${cols.map(c=>`<th>${c.t}</th>`).join('')}</tr>
+   ${list.map((c,i)=>`<tr><td>${i+1}</td>${cols.map(col=>`<td>${col.type==='date'?fmtDate(gv(c,col.k)):esc(gv(c,col.k)??'')}</td>`).join('')}</tr>`).join('')}
+  </table></body></html>`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['﻿'+html],{type:'application/vnd.ms-excel'}));
+  a.download=`${m.file}_${today()}.xls`; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function esc(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function fmtNum(v,d=2){ const n=parseFloat(v); if(isNaN(n)) return ''; return n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function fmtDate(d){ if(!d) return ''; const [y,m,dd]=String(d).split('-'); const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return m?`${dd}-${M[+m-1]}-${y}`:d; }
+function today(){ const d=new Date(); return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10); }
+let tt; function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('show'),2200); }
+
+/* =========================================================
+   STARTUP
+   ========================================================= */
+document.getElementById('btnOpenDb').onclick=openDb;
+document.getElementById('btnNewDb').onclick=newDb;
+document.getElementById('btnReconnect').onclick=reconnect;
+/* ---------- Settings popup ---------- */
+const setModal=document.getElementById('setModal');
+let lastSaved=null;
+function connInfoHtml(){
+  const mode = fileHandle ? 'Direct File (auto-save)' : 'Download mode (manual Save DB)';
+  const sz = new Blob([JSON.stringify(DB)]).size;
+  const rows=[
+    ['Current User', esc(currentUser||'-')],
+    ['Status', `<span style="color:${dirty?'var(--warn)':'var(--ok)'};font-weight:600">● ${dirty?'Unsaved changes':'Connected · Saved'}</span>`],
+    ['Database File', esc(dbFileName||'-')],
+    ['Connection Mode', mode],
+    ['Browser Support', FS_OK?'Direct save supported':'No direct save (use Chrome/Edge)'],
+    ...Object.values(MODULES).filter(m=>m.data).map(m=>[({yarnNames:'Total Actual Yarn Names',issues:'Total Issue entries'})[m.data]||'Total '+m.title, DB[m.data].length.toLocaleString()]),
+    ['DB Size', (sz/1024).toFixed(1)+' KB'],
+    ['Last Saved', lastSaved?lastSaved.toLocaleString('en-GB'):'-'],
+    ['DB Updated', DB.updated?new Date(DB.updated).toLocaleString('en-GB'):'-']
+  ];
+  return rows.map(r=>`<tr><td style="padding:5px 8px;border:1px solid var(--line);background:#f7f9fc;width:40%;color:var(--muted)">${r[0]}</td><td style="padding:5px 8px;border:1px solid var(--line)">${r[1]}</td></tr>`).join('');
+}
+function openSettings(){ document.getElementById('connInfo').innerHTML=connInfoHtml(); setModal.classList.add('show'); }
+// Setting page, tab 2: database connection info + database buttons (same actions as the ⚙ popup)
+function renderSettingDb(){
+  const main=document.getElementById('main');
+  main.innerHTML=`<div class="tabBar">${MODULES.setting.tabs.map(([k,t])=>`<button class="tab ${k==='settingDb'?'on':''}" data-tab="${k}">${t}</button>`).join('')}</div>
+   <div class="panel gridPanel" style="overflow:auto"><div style="padding:16px 18px;max-width:640px">
+     <div style="font-weight:700;color:var(--navy);margin-bottom:6px">Database Connection Info</div>
+     <table style="width:100%;border-collapse:collapse;font-size:12.5px">${connInfoHtml()}</table>
+     <div style="font-weight:700;color:var(--navy);margin:16px 0 6px">Database</div>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+       <button class="btn blue" data-act="sSave">💾 Save DB</button>
+       <button class="btn" data-act="sBackup">⬇ Backup Download</button>
+       <button class="btn" data-act="sOpenOther">📂 Open Another DB</button>
+       <button class="btn red" data-act="sDisconnect">⏏ Disconnect</button>
+       <button class="btn" data-act="sChangeUser" style="grid-column:1/-1">👤 Change User</button>
+       <button class="btn" data-act="sResetCols" style="grid-column:1/-1">↺ Table Column Layout Reset (width + order)</button>
+     </div></div></div>`;
+  main.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>showMenu(b.dataset.tab));
+  main.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
+    if(b.dataset.act==='sSave'){ writeDb().then(()=>{ toast('Database saved'); if(currentMenu==='settingDb'&&DB) renderSettingDb(); }).catch(e=>toast('Save error: '+e.message)); return; }
+    document.getElementById(b.dataset.act).click(); closeSettings(); if(currentMenu==='settingDb'&&DB&&document.getElementById('app').style.display!=='none') renderSettingDb(); });
+}
+function closeSettings(){ setModal.classList.remove('show'); }
+setModal.querySelectorAll('[data-sclose]').forEach(b=>b.onclick=closeSettings);
+document.getElementById('btnSettings').onclick=()=>showMenu('setting');
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&setModal.classList.contains('show')) closeSettings(); });
+
+document.getElementById('sSave').onclick=()=>writeDb().then(()=>{ if(fileHandle) toast('Database saved'); openSettings(); }).catch(e=>toast('Save error: '+e.message));
+document.getElementById('sBackup').onclick=()=>{
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(DB,null,2)],{type:'application/json'}));
+  a.download=`Yarn_Store_DB_backup_${today()}.json`; a.click(); URL.revokeObjectURL(a.href);
+  toast('Backup downloaded');
+};
+function disconnect(){
+  if(dirty && !fileHandle && !confirm('There are unsaved changes. Disconnect anyway?')) return false;
+  DB=null; fileHandle=null; dirty=false; closeSettings(); ssSet('ydys_connected',null);
+  document.getElementById('app').style.display='none';
+  document.getElementById('connectScreen').style.display='flex';
+  initConnect(); return true;
+}
+document.getElementById('sDisconnect').onclick=()=>{ if(confirm('Disconnect the database?')) disconnect(); };
+document.getElementById('btnUserOk').onclick=submitUser;
+document.getElementById('userName').addEventListener('keydown',e=>{ if(e.key==='Enter') submitUser(); });
+// User menu: click the user name -> Logout (red). Database stays connected; asks for a name again.
+const userMenu=document.getElementById('userMenu');
+document.getElementById('userBtn').onclick=e=>{ e.stopPropagation(); userMenu.style.display=userMenu.style.display==='none'?'block':'none'; };
+document.addEventListener('click',()=>{ userMenu.style.display='none'; });
+document.getElementById('btnLogout').onmouseenter=e=>e.target.style.background='#fff5f5';
+document.getElementById('btnLogout').onmouseleave=e=>e.target.style.background='#fff';
+document.getElementById('btnLogout').onclick=()=>{ userMenu.style.display='none'; currentUser=''; ssSet('ydys_user',null); document.getElementById('app').style.display='none'; askUser(); };
+document.getElementById('sChangeUser').onclick=()=>{ closeSettings(); ssSet('ydys_user',null); document.getElementById('app').style.display='none'; askUser(); };
+document.getElementById('sResetCols').onclick=()=>{ resetLayout(); };
+document.getElementById('sOpenOther').onclick=()=>{ if(disconnect()) openDb(); };
+async function initConnect(){
+  const h = FS_OK ? await idbGet('lastHandle') : null;
+  const b=document.getElementById('btnReconnect');
+  if(h){ document.getElementById('lastDbName').textContent=h.name; b.style.display='block'; } else b.style.display='none';
+}
+// On refresh: if previously connected and permission is still granted, reopen the last DB directly
+async function autoResume(){
+  await initConnect();
+  if(!FS_OK || ssGet('ydys_connected')!=='1') return;
+  const h=await idbGet('lastHandle'); if(!h) return;
+  try{ if(await h.queryPermission({mode:'readwrite'})==='granted') await loadFromHandle(h); }catch(e){}
+}
+autoResume();
+</script>
+</body>
+</html>
